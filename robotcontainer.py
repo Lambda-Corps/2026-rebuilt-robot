@@ -83,10 +83,10 @@ class RobotContainer:
         # Note that X is defined as forward according to WPILib convention,
         # and Y is defined as to the left according to WPILib convention.
 
-        move_speed_reduction = 0.4    #### Added to reduce speed while learning about swerve
+        move_speed_reduction = 0.8    #### Added to reduce speed while learning about swerve
         rotate_speed_reduction = 1.0  ###  NOTE THAT updating _max_speed did not seem to affect speed
         dead_zone = 0.055
-        exp_scaling = 2.0
+        exp_scaling = 1.4
 
 
         self.drivetrain.setDefaultCommand(
@@ -178,7 +178,6 @@ class RobotContainer:
         curved = normalized ** exponent
         # Reapply sign
         final = curved * (1 if axis_value > 0 else -1)
-        print(f"Axis value: {axis_value}, Normalized: {normalized}, Curved: {curved}, final: {final}")
         return final
 
     def getAutonomousCommand(self) -> commands2.Command:
