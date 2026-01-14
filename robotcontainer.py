@@ -39,9 +39,21 @@ class RobotContainer:
             0.85
         )  # 3/4 of a rotation per second max angular velocity
 
+        # Track whether we're in field-centric mode
+        self._is_field_centric = False
+
         # Setting up bindings for necessary control of the swerve drive platform
-        self._drive = (
+        self._drive_robot_centric = (
             swerve.requests.RobotCentric()
+            .with_rotational_deadband(
+                self._max_angular_rate * 0.075
+            )  # Add a 10% deadband
+            .with_drive_request_type(
+                swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
+            )  # Use open-loop control for drive motors
+        )
+        self._drive_field_centric = (
+            swerve.requests.FieldCentric()
             .with_rotational_deadband(
                 self._max_angular_rate * 0.075
             )  # Add a 10% deadband
@@ -93,8 +105,7 @@ class RobotContainer:
             # Drivetrain will execute this command periodically
             self.drivetrain.apply_request(
                 lambda: (
-                    self
-                    ._drive
+                    (self._drive_field_centric if self._is_field_centric else self._drive_robot_centric)
                     .with_velocity_x(
                         # -self._joystick.getLeftY() * self._max_speed  * move_speed_reduction
                         -self.apply_deadzone_and_curve( self._joystick.getLeftY(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
@@ -160,14 +171,21 @@ class RobotContainer:
             self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
         )
 
-        # reset the field-centric heading on left bumper press
+        # Toggle between RobotCentric and FieldCentric on left bumper press
         self._joystick.leftBumper().onTrue(
-            self.drivetrain.runOnce(lambda: self.drivetrain.seed_field_centric())
+            commands2.cmd.runOnce(lambda: self._toggle_drive_mode())
         )
 
         self.drivetrain.register_telemetry(
             lambda state: self._logger.telemeterize(state)
         )
+
+    def _toggle_drive_mode(self) -> None:
+        """Toggle between RobotCentric and FieldCentric drive modes."""
+        self._is_field_centric = not self._is_field_centric
+        mode_name = "FieldCentric" if self._is_field_centric else "RobotCentric"
+        SmartDashboard.putString("Drive Mode", mode_name)
+        print(f"Drive mode switched to: {mode_name}")
 
     def apply_deadzone_and_curve(self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0) -> float:
         if abs(axis_value) < deadzone:
