@@ -3,22 +3,34 @@
 # on your RoboRIO
 #
 
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lambda-corps-2026"
+version = "0.1.0"
+description = "Lambda Corps FRC 2026 Robot Code"
+
+[tool.setuptools]
+packages = ["commands", "subsystems", "apriltag_viewer", "apriltag_viewer.camera", "apriltag_viewer.detection", "apriltag_viewer.field", "apriltag_viewer.gui", "apriltag_viewer.utils"]
+
+[project.scripts]
+apriltag-viewer = "apriltag_viewer.main:main"
+
 [tool.robotpy]
 
 # Version of robotpy this project depends on
-robotpy_version = "2025.3.2.2"
+robotpy_version = "2026.2.1"
 
 # Which extra RobotPy components should be installed
 # -> equivalent to `pip install robotpy[extra1, ...]
-robotpy_extras = [
+components = [
     # "all",
-    # "apriltag",
     "commands2",
     # "cscore",
     # "navx",
-    "pathplannerlib",
     # "phoenix5",
-    # "photonvision",
     # "playingwithfusion",
     # "rev",
     # "romi",
@@ -28,5 +40,7 @@ robotpy_extras = [
 
 # Other pip packages to install
 requires = [
-    "phoenix6~=25.4"
+    "phoenix6~=26.1",
+    "robotpy_pathplannerlib~=2026.1.1",
+    "photonlibpy>=2026.0.1b38"
 ]
