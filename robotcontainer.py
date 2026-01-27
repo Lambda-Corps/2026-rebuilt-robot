@@ -4,6 +4,7 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 
+import wpilib
 import commands2
 import commands2.cmd
 from commands2.button import CommandXboxController, Trigger
@@ -20,6 +21,17 @@ from wpimath.units import rotationsToRadians
 
 from subsystems.ledsubsystem import LEDSubsystem
 from commands.ledcommand import LEDCommand
+from subsystems.shooter import Shooter
+from commands.flywheelCommand import ControlFlywheel
+from commands.flywheelCommand import ControlFlywheel
+from commands.indexerCommand import ControlIndexer
+from commands.timedIndexer import TimedIndexer
+from commands.fireinthehole import FireInTheHole
+from commands2.button import CommandXboxController
+from commands.update_speed_variable import Update_Speed_Variable
+from commands.enable_Flywheel import Enable_flywheel
+from phoenix6.signal_logger import SignalLogger
+
 
 
 
@@ -72,11 +84,19 @@ class RobotContainer:
 
         self._logger = Telemetry(self._max_speed)
 
+        # Stops errors in the Console log
+        wpilib.DriverStation.silenceJoystickConnectionWarning(True)
+
         self._joystick = CommandXboxController(0)
+        self._partner_controller = CommandXboxController(1)
 
         self.drivetrain = TunerConstants.create_drivetrain()
 
         self._ledsubsystem = LEDSubsystem()
+
+        self._shooter: Shooter = Shooter()
+        self._shooter.setDefaultCommand(ControlFlywheel(self._shooter,  0))
+
 
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
@@ -133,6 +153,23 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
 
+
+       #=(Shooter controls)=================================================================
+       # NOTE:  We should consider placing  these controls on a "Partner"
+
+        self._partner_controller.a().onTrue(Enable_flywheel(self._shooter, True))
+        self._partner_controller.b().onTrue(Enable_flywheel(self._shooter, False))
+
+        self._partner_controller.x().whileTrue(ControlIndexer(self._shooter, 0.2))
+        self._partner_controller.y().whileTrue(ControlIndexer(self._shooter, 0) )
+        self._partner_controller.rightTrigger().onTrue(TimedIndexer(self._shooter, 0.2, 1)       )
+        self._partner_controller.leftTrigger().onTrue(FireInTheHole(self._shooter, 0.2, 5))
+
+        self._partner_controller.povUp().onTrue(Update_Speed_Variable(self._shooter, 0.05))   # Increase the motor speed by 0.1
+        self._partner_controller.povDown().onTrue(Update_Speed_Variable(self._shooter, -0.05))
+
+       #=(End of Shooter controls)==========================================================
+
         self._joystick.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
         self._joystick.a().whileFalse(LEDCommand( self._ledsubsystem, 0))
         self._joystick.a().whileTrue(LEDCommand( self._ledsubsystem, 135))
@@ -155,6 +192,8 @@ class RobotContainer:
                 lambda: self._forward_straight.with_velocity_x(-0.5).with_velocity_y(0)
             )
         )
+
+       #=(System Identification controls)===================================================
 
         # Run SysId routines when holding back/start and X/Y.
         # Note that each routine should be run exactly once in a single log.
