@@ -4,7 +4,7 @@ import wpilib
 
 # DF - Copied from Task 4
 
-class evil_lazers(Subsystem):
+class evil_lazersc:
 
    def __init__(self) -> None:
        super().__init__()      # Call the initialization routing of the parent Object

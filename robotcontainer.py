@@ -9,6 +9,7 @@ import commands2.cmd
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 
+from enable_Intake import Enable_Intake
 from generated.tuner_constants import TunerConstants
 from telemetry import Telemetry
 
@@ -20,6 +21,9 @@ from wpimath.units import rotationsToRadians
 
 from subsystems.ledsubsystem import LEDSubsystem
 from commands.ledcommand import LEDCommand
+
+from indexerCommand import ControlIndexer
+from intakeCommand import ControlIntake
 
 
 
@@ -136,6 +140,8 @@ class RobotContainer:
         self._joystick.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
         self._joystick.a().whileFalse(LEDCommand( self._ledsubsystem, 0))
         self._joystick.a().whileTrue(LEDCommand( self._ledsubsystem, 135))
+
+        self._joystick.x().onTrue(Enable_Intake(self._intake, True))
 
         self._joystick.b().whileTrue(
             self.drivetrain.apply_request(
