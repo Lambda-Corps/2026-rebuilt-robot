@@ -6,15 +6,14 @@ import wpilib
 from intake import Intake
 
 class Enable_Intake(Command):
-    def __init__(self, intake: Intake, enable_control : bool, reverse : bool ):
+    def __init__(self, intake: Intake, enable_control : bool ):
         super().__init__()
         self.enable_control = enable_control
         self._intake = intake
-        self._reverse = reverse
         self.addRequirements(self._intake)  
 
     def initialize(self):
-        self._intake.enable_intake(self.enable_control, self._reverse) 
+        self._intake.enable_intake(self.enable_control) 
         print (f" Enable_intake {self.enable_control}")
 
     def execute(self):
