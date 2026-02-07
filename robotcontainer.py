@@ -78,7 +78,9 @@ class RobotContainer:
 
         self._logger = Telemetry(self._max_speed)
 
-        self._joystick = CommandXboxController(0)
+        self._driver_controller = CommandXboxController(0)
+
+        self._partner_controller = CommandXboxController(1)
 
         self.drivetrain = TunerConstants.create_drivetrain()
 
@@ -115,17 +117,17 @@ class RobotContainer:
                 lambda: (
                     (self._drive_field_centric if self._is_field_centric else self._drive_robot_centric)
                     .with_velocity_x(
-                        # -self._joystick.getLeftY() * self._max_speed  * move_speed_reduction
-                        -self.apply_deadzone_and_curve( self._joystick.getLeftY(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
+                        # -self._driver_controller.getLeftY() * self._max_speed  * move_speed_reduction
+                        -self.apply_deadzone_and_curve( self._driver_controller.getLeftY(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
                         #### DF:  Updated:  Negated
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
-                        # -self._joystick.getLeftX() * self._max_speed * move_speed_reduction
-                        -self.apply_deadzone_and_curve( self._joystick.getLeftX(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
+                        # -self._driver_controller.getLeftX() * self._max_speed * move_speed_reduction
+                        -self.apply_deadzone_and_curve( self._driver_controller.getLeftX(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
-                        # -self._joystick.getRightX() * self._max_angular_rate    #### DF:  Original
-                        -self._joystick.getRightX() * self._max_angular_rate * rotate_speed_reduction
+                        # -self._driver_controller.getRightX() * self._max_angular_rate    #### DF:  Original
+                        -self._driver_controller.getRightX() * self._max_angular_rate * rotate_speed_reduction
                               #### DF:  Updated:  Negated
                     )  # Drive counterclockwise with negative X (left)
                 )
@@ -141,30 +143,30 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
 
-        self._joystick.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
-        self._joystick.a().whileFalse(LEDCommand( self._ledsubsystem, 0))
-        self._joystick.a().whileTrue(LEDCommand( self._ledsubsystem, 135))
+        self._driver_controller.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
+        self._driver_controller.a().whileFalse(LEDCommand( self._ledsubsystem, 0))
+        self._driver_controller.a().whileTrue(LEDCommand( self._ledsubsystem, 135))
 
-        self._joystick.x().whileTrue(Enable_Intake(self._intake, True, False))
-        self._joystick.y().whileTrue(Enable_Intake(self._intake, True, True))
-        self._joystick.x().whileFalse(Enable_Intake(self._intake, False, False))
-        self._joystick.y().whileFalse(Enable_Intake(self._intake, False, True))
+        self._partner_controller.x().whileTrue(Enable_Intake(self._intake, True, False))
+        self._partner_controller.y().whileTrue(Enable_Intake(self._intake, True, True))
+        self._partner_controller.x().whileFalse(Enable_Intake(self._intake, False, False))
+        self._partner_controller.y().whileFalse(Enable_Intake(self._intake, False, True))
 
 
-        self._joystick.b().whileTrue(
+        self._driver_controller.b().whileTrue(
             self.drivetrain.apply_request(
                 lambda: self._point.with_module_direction(
-                    Rotation2d(-self._joystick.getLeftY(), -self._joystick.getLeftX())
+                    Rotation2d(-self._driver_controller.getLeftY(), -self._driver_controller.getLeftX())
                 )
             )
         )
 
-        self._joystick.pov(0).whileTrue(
+        self._driver_controller.pov(0).whileTrue(
             self.drivetrain.apply_request(
                 lambda: self._forward_straight.with_velocity_x(0.5).with_velocity_y(0)
             )
         )
-        self._joystick.pov(180).whileTrue(
+        self._driver_controller.pov(180).whileTrue(
             self.drivetrain.apply_request(
                 lambda: self._forward_straight.with_velocity_x(-0.5).with_velocity_y(0)
             )
@@ -172,21 +174,21 @@ class RobotContainer:
 
         # Run SysId routines when holding back/start and X/Y.
         # Note that each routine should be run exactly once in a single log.
-        (self._joystick.back() & self._joystick.y()).whileTrue(
+        (self._driver_controller.back() & self._driver_controller.y()).whileTrue(
             self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
         )
-        (self._joystick.back() & self._joystick.x()).whileTrue(
+        (self._driver_controller.back() & self._driver_controller.x()).whileTrue(
             self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
         )
-        (self._joystick.start() & self._joystick.y()).whileTrue(
+        (self._driver_controller.start() & self._driver_controller.y()).whileTrue(
             self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
         )
-        (self._joystick.start() & self._joystick.x()).whileTrue(
+        (self._driver_controller.start() & self._driver_controller.x()).whileTrue(
             self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
         )
 
         # Toggle between RobotCentric and FieldCentric on left bumper press
-        self._joystick.leftBumper().onTrue(
+        self._driver_controller.leftBumper().onTrue(
             commands2.cmd.runOnce(lambda: self._toggle_drive_mode())
         )
 
