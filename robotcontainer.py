@@ -25,6 +25,8 @@ from commands.ledcommand import LEDCommand
 from indexerCommand import ControlIndexer
 from intakeCommand import ControlIntake
 
+from intake import Intake
+
 
 
 class RobotContainer:
@@ -82,6 +84,8 @@ class RobotContainer:
 
         self._ledsubsystem = LEDSubsystem()
 
+        self._intake =  Intake()
+        
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
         SmartDashboard.putData("Auto Mode", self._auto_chooser)
