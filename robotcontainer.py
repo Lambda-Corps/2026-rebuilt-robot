@@ -145,8 +145,10 @@ class RobotContainer:
         self._joystick.a().whileFalse(LEDCommand( self._ledsubsystem, 0))
         self._joystick.a().whileTrue(LEDCommand( self._ledsubsystem, 135))
 
-        self._joystick.x().onTrue(Enable_Intake(self._intake, True, False))
-        self._joystick.y().onTrue(Enable_Intake(self._intake, True, True))
+        self._joystick.x().whileTrue(Enable_Intake(self._intake, True, False))
+        self._joystick.y().whileTrue(Enable_Intake(self._intake, True, True))
+        self._joystick.x().whileFalse(Enable_Intake(self._intake, False, False))
+        self._joystick.y().whileFalse(Enable_Intake(self._intake, False, True))
 
 
         self._joystick.b().whileTrue(
