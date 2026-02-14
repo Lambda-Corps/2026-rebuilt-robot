@@ -65,7 +65,8 @@ class Shooter(Subsystem):
         print(f"velocity_value: {velocity_value:6.2f}")
 
 
-    def flywheel_spin_global_control(self) -> None:           # Speed not being controlled by parameter
+    def flywheel_spin_global_control(self) -> None:         
+        self.flywheel_enabled = True  # Speed not being controlled by parameter
         if (self.flywheel_enabled):                                       # Global control of Flywheel
             self.counter = self.counter  + 1
 

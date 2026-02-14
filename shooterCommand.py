@@ -47,7 +47,6 @@ class ControlFlywheel(Command):
 
     def execute(self):
         self._Flywheel.flywheel_spin(self._speed)
-        print("67")
 
 
     def isFinished(self) -> bool:

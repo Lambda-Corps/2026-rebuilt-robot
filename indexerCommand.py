@@ -47,7 +47,7 @@ class ControlIndexer(Command):
 
     def execute(self):
         self._Indexer.indexer_spin(self._speed)
-        print("67")
+        print("Indexer should be moving")
 
 
     def isFinished(self) -> bool:
