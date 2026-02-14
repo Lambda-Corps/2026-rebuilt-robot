@@ -35,7 +35,8 @@ class Intake(Subsystem):
         talon.configurator.apply(config)
         return talon
     
-    def intake_speed_global_control(self) -> None:       
+    def intake_speed_global_control(self) -> None:
+        print("Global Control Ran~")  
         if (self.intake_enabled):                                         # Global control of intake speed
             self.intake_duty_cycle_out.output = self.motor_speed_global    # Speed set by global variable
             self._intake_motor.set_control(self.intake_duty_cycle_out)
@@ -64,6 +65,7 @@ class Intake(Subsystem):
         self.intake_enabled  = enable
         self.intake_reversed = reverse
         print (f">>>> self.intake_enabled {self.intake_enabled}")
+        self.intake_speed_global_control()
 
 
         # added comment (testing source control)
