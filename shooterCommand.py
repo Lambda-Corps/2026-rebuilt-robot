@@ -29,24 +29,24 @@ from phoenix6 import StatusCode
 from wpilib import SmartDashboard, AnalogInput, RobotBase, Timer
 from shooter import Shooter
 
-class ControlIndexer(Command):
+class ControlFlywheel(Command):
     def __init__(self, sub: Shooter, speed: float, timeout = 0):
         super().__init__()
 
         self._speed = speed
-        self._Indexer = sub
+        self._Flywheel = sub
         self._timeout = timeout
 
         self._timer = Timer()
         self._timer.start()
 
-        self.addRequirements(self._Indexer)  
+        self.addRequirements(self._Flywheel)  
 
     def initialize(self):
         self._timer.restart()
 
     def execute(self):
-        self._Indexer.indexer_spin(self._speed)
+        self._Flywheel.flywheel_spin(self._speed)
         print("67")
 
 

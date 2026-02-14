@@ -24,6 +24,9 @@ from commands.ledcommand import LEDCommand
 
 from indexerCommand import ControlIndexer
 from intakeCommand import ControlIntake
+from shooterCommand import ControlFlywheel
+
+from shooter import Shooter
 
 from intake import Intake
 
@@ -77,16 +80,12 @@ class RobotContainer:
         )
 
         self._logger = Telemetry(self._max_speed)
-
         self._driver_controller = CommandXboxController(0)
-
         self._partner_controller = CommandXboxController(1)
-
         self.drivetrain = TunerConstants.create_drivetrain()
-
         self._ledsubsystem = LEDSubsystem()
-
         self._intake =  Intake()
+        self._shooter = Shooter()
         
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
@@ -142,24 +141,30 @@ class RobotContainer:
         Trigger(DriverStation.isDisabled).whileTrue(
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
+ 
+        self._driver_controller.a().whileTrue(ControlFlywheel(self._shooter, 0.67))
+        self._driver_controller.b().whileTrue(ControlFlywheel(self._shooter, 0))
+        self._driver_controller.leftTrigger().whileTrue(Enable_Intake(self._intake, True, False))
+        self._driver_controller.leftTrigger().whileFalse(Enable_Intake(self._intake, False, False))
+        #self._driver_controller.leftBumper().onTrue(._toggle_drive_mode())
 
-        self._driver_controller.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
-        self._driver_controller.a().whileFalse(LEDCommand( self._ledsubsystem, 0))
-        self._driver_controller.a().whileTrue(LEDCommand( self._ledsubsystem, 135))
-
+        self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.67))
+        self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
+        self._partner_controller.a().whileTrue(ControlFlywheel(self._shooter, 0.67))
+        self._partner_controller.b().whileTrue(ControlFlywheel(self._shooter, 0))
         self._partner_controller.x().whileTrue(Enable_Intake(self._intake, True, False))
-        self._partner_controller.y().whileTrue(Enable_Intake(self._intake, True, True))
         self._partner_controller.x().whileFalse(Enable_Intake(self._intake, False, False))
+        self._partner_controller.y().whileTrue(Enable_Intake(self._intake, True, True))
         self._partner_controller.y().whileFalse(Enable_Intake(self._intake, False, True))
 
 
-        self._driver_controller.b().whileTrue(
-            self.drivetrain.apply_request(
-                lambda: self._point.with_module_direction(
-                    Rotation2d(-self._driver_controller.getLeftY(), -self._driver_controller.getLeftX())
-                )
-            )
-        )
+        # self._driver_controller.b().whileTrue(
+        #     self.drivetrain.apply_request(
+        #         lambda: self._point.with_module_direction(
+        #             Rotation2d(-self._driver_controller.getLeftY(), -self._driver_controller.getLeftX())
+        #         )
+        #     )
+        # )
 
         self._driver_controller.pov(0).whileTrue(
             self.drivetrain.apply_request(
@@ -202,6 +207,7 @@ class RobotContainer:
         mode_name = "FieldCentric" if self._is_field_centric else "RobotCentric"
         SmartDashboard.putString("Drive Mode", mode_name)
         print(f"Drive mode switched to: {mode_name}")
+        print("67")
 
     def apply_deadzone_and_curve(self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0) -> float:
         if abs(axis_value) < deadzone:

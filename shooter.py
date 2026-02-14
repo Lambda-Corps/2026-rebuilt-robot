@@ -34,11 +34,10 @@ class Shooter(Subsystem):
         self._shooter_flywheel: TalonFX = self.__configure_flywheel()
         self.flywheel_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.indexer_duty_cycle_out = controls.DutyCycleOut(0.0)
-        
+        self.flywheel_enabled = False
         self.counter = 0
         
         self.motor_speed_global = 0.5  # Initial speed
-        self.flywheel_enabled = False
 
     def __configure_indexer(self,) -> TalonFX:
         talon = TalonFX(21)
@@ -56,7 +55,7 @@ class Shooter(Subsystem):
         return talon
     
 
-    def flywheel_spin(self,flywheel_spinspeed: float) -> None:
+    def flywheel_spin(self, flywheel_spinspeed: float) -> None:
         self.flywheel_duty_cycle_out.output = flywheel_spinspeed
         # self.set_flywheel_duty_cycle()
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
@@ -102,6 +101,6 @@ class Shooter(Subsystem):
 
         print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
 
-    def enable_flywheel(self, enable):
+    def enable_flywheel(self, enable, flywheel_spinspeed):
         self.flywheel_enabled  = enable
-        print (f">>>> self.flywheel_enabled {self.flywheel_enabled}")
+        self.flywheel_spin(flywheel_spinspeed)
