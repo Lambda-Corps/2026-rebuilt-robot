@@ -30,12 +30,13 @@ from wpilib import SmartDashboard, AnalogInput, RobotBase, Timer
 from intake import Intake
 
 class ControlIntake(Command):
-    def __init__(self, intake: Intake, speed: float, timeout = 0):
+    def __init__(self, intake: Intake, speed: float, reverse: bool, timeout = 0):
         super().__init__()
 
         self._speed = speed
         self._intake = intake
         self._timeout = timeout
+        self._reverse = reverse
 
         self._timer = Timer()
         self._timer.start()
