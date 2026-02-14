@@ -37,10 +37,10 @@ class Intake(Subsystem):
     
     def intake_speed_global_control(self) -> None:
         print("Global Control Ran~")  
-        if (self.intake_enabled):                                         # Global control of intake speed
+        if (self.intake_enabled and not self.intake_reversed):                                         # Global control of intake speed
             self.intake_duty_cycle_out.output = self.motor_speed_global    # Speed set by global variable
             self._intake_motor.set_control(self.intake_duty_cycle_out)
-        elif (self.intake_enabled & self.intake_reversed):
+        elif (self.intake_enabled and self.intake_reversed):
             self.intake_duty_cycle_out.output = -self.motor_speed_global
             self._intake_motor.set_control(self.intake_duty_cycle_out)
         else:
