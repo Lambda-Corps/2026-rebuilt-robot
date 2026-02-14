@@ -54,11 +54,11 @@ class Intake(Subsystem):
     def change_speed_variable_function(self, speed_update : float) -> None:
         if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
             self.motor_speed_global = self.motor_speed_global + speed_update
-        print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
+        #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
 
     def enable_intake(self, enable):
         self.intake_enabled  = enable
-        print (f">>>> self.intake_enabled {self.intake_enabled}")
+        #print (f">>>> self.intake_enabled {self.intake_enabled}")
 
 
         # added comment (testing source control)

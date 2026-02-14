@@ -26,7 +26,7 @@ class evil_lazersc:
        # Push the array of LED color information into the physical LED strip
        self.LED.setData(self.ledData)
        self.LED.start()
-       print (">>>> Robot Initialization complete in __init__ in LEDSubsystem.py")
+       #print (">>>> Robot Initialization complete in __init__ in LEDSubsystem.py")
 
 
    def joystickControlsColor(self, xInput, yInput):

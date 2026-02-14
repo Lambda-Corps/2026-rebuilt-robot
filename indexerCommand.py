@@ -44,10 +44,11 @@ class ControlIndexer(Command):
 
     def initialize(self):
         self._timer.restart()
+        #print("Indexer called")
 
     def execute(self):
         self._Indexer.indexer_spin(self._speed)
-        print("Indexer should be moving")
+
 
 
     def isFinished(self) -> bool:

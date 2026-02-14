@@ -56,7 +56,7 @@ class Shooter(Subsystem):
     
 
     def flywheel_spin(self, flywheel_spinspeed: float) -> None:
-        self.flywheel_duty_cycle_out.output = flywheel_spinspeed * -1
+        self.flywheel_duty_cycle_out.output = flywheel_spinspeed
         # self.set_flywheel_duty_cycle()
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
@@ -100,7 +100,7 @@ class Shooter(Subsystem):
             self.motor_speed_global = self.motor_speed_global + speed_update
         
 
-        print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
+        #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
 
     def enable_flywheel(self, enable, flywheel_spinspeed):
         self.flywheel_enabled  = enable

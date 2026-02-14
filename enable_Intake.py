@@ -16,6 +16,7 @@ class Enable_Intake(Command):
     def initialize(self):
         
         self._intake.enable_intake(self.enable_control, self._reverse) 
+        #print("Enable_Intake Called")
 
     def execute(self):
         pass

@@ -86,9 +86,9 @@ class RobotContainer:
         self._ledsubsystem = LEDSubsystem()
         self._intake =  Intake()
         self._shooter = Shooter()
-        self._intake.getDefaultCommand(Enable_Intake(self._intake, False, False))
-        self._shooter.getDefaultCommand(ControlFlywheel(self._shooter, 0))
-        self._shooter.getDefaultCommand(ControlIndexer(self._shooter, 0))
+        self._intake.setDefaultCommand(Enable_Intake(self._intake, False, False))
+        self._shooter.setDefaultCommand(ControlFlywheel(self._shooter, 0))
+        self._shooter.setDefaultCommand(ControlIndexer(self._shooter, 0))
         
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
@@ -145,7 +145,7 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
  
-        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, 0.67))
+        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.67))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._driver_controller.leftTrigger().whileTrue(Enable_Intake(self._intake, True, False))
         self._driver_controller.leftTrigger().whileFalse(Enable_Intake(self._intake, False, False))
@@ -154,10 +154,10 @@ class RobotContainer:
         self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
         self._partner_controller.a().whileTrue(ControlFlywheel(self._shooter, 0.67))
         self._partner_controller.b().whileTrue(ControlFlywheel(self._shooter, 0))
-        self._partner_controller.x().whileTrue(Enable_Intake(self._intake, True, False))
-        self._partner_controller.x().whileFalse(Enable_Intake(self._intake, False, False))
-        self._partner_controller.y().whileTrue(Enable_Intake(self._intake, True, True))
-        self._partner_controller.y().whileFalse(Enable_Intake(self._intake, False, True))
+        self._partner_controller.x().onTrue(Enable_Intake(self._intake, True, False))
+        self._partner_controller.x().onFalse(Enable_Intake(self._intake, False, False))
+        self._partner_controller.y().onTrue(Enable_Intake(self._intake, True, True))
+        self._partner_controller.y().onFalse(Enable_Intake(self._intake, False, True))
 
 
         # self._driver_controller.b().whileTrue(

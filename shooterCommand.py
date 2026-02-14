@@ -44,6 +44,7 @@ class ControlFlywheel(Command):
 
     def initialize(self):
         self._timer.restart()
+        #print("ControlFlywheel Called")
 
     def execute(self):
         self._Flywheel.flywheel_spin(self._speed)
