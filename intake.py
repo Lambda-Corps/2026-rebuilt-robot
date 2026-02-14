@@ -41,7 +41,7 @@ class Intake(Subsystem):
             self.intake_duty_cycle_out.output = self.motor_speed_global    # Speed set by global variable
             self._intake_motor.set_control(self.intake_duty_cycle_out)
         elif (self.intake_enabled and self.intake_reversed):
-            self.intake_duty_cycle_out.output = -self.motor_speed_global
+            self.intake_duty_cycle_out.output = self.motor_speed_global * -1
             self._intake_motor.set_control(self.intake_duty_cycle_out)
         else:
             self.intake_duty_cycle_out.output = 0           # Speed set by global variable

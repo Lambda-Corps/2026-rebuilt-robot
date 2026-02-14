@@ -145,14 +145,14 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
  
-        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.67))
+        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, 0.67))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._driver_controller.leftTrigger().whileTrue(Enable_Intake(self._intake, True, False))
         self._driver_controller.leftTrigger().whileFalse(Enable_Intake(self._intake, False, False))
 
         self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.67))
         self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
-        self._partner_controller.a().whileTrue(ControlFlywheel(self._shooter, -0.67))
+        self._partner_controller.a().whileTrue(ControlFlywheel(self._shooter, 0.67))
         self._partner_controller.b().whileTrue(ControlFlywheel(self._shooter, 0))
         self._partner_controller.x().whileTrue(Enable_Intake(self._intake, True, False))
         self._partner_controller.x().whileFalse(Enable_Intake(self._intake, False, False))

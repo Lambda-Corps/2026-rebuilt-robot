@@ -56,7 +56,7 @@ class Shooter(Subsystem):
     
 
     def flywheel_spin(self, flywheel_spinspeed: float) -> None:
-        self.flywheel_duty_cycle_out.output = flywheel_spinspeed
+        self.flywheel_duty_cycle_out.output = flywheel_spinspeed * -1
         # self.set_flywheel_duty_cycle()
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
