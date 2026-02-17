@@ -27,30 +27,27 @@ from phoenix6.configs import TalonFXConfiguration
 from phoenix6.signals.spn_enums import (InvertedValue, NeutralModeValue, FeedbackSensorSourceValue)
 from phoenix6 import StatusCode
 from wpilib import SmartDashboard, AnalogInput, RobotBase, Timer
-from intake import Intake
+from subsystems.shooter import Shooter
 
-class ControlIntake(Command):
-    def __init__(self, intake: Intake, speed: float, reverse: bool, timeout = 0):
+class ControlFlywheel(Command):
+    def __init__(self, sub: Shooter, speed: float):
         super().__init__()
 
         self._speed = speed
-        self._intake = intake
-        self._timeout = timeout
-        self._reverse = reverse
+        self._Flywheel = sub
 
-        self._timer = Timer()
-        self._timer.start()
 
-        self.addRequirements(self._intake)  
+        self.addRequirements(self._Flywheel)  
 
     def initialize(self):
-        self._timer.restart()
+        pass
+        #print("ControlFlywheel Called")
 
     def execute(self):
-        self._intake.intake_speed_global_control()
+        self._Flywheel.flywheel_spin(self._speed)
 
     def isFinished(self) -> bool:
-        return False
+        return True
 
     def end(self, interrupted: bool):
         pass

@@ -9,7 +9,6 @@ import commands2.cmd
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 
-from enable_Intake import Enable_Intake
 from generated.tuner_constants import TunerConstants
 from telemetry import Telemetry
 
@@ -22,13 +21,13 @@ from wpimath.units import rotationsToRadians
 from subsystems.ledsubsystem import LEDSubsystem
 from commands.ledcommand import LEDCommand
 
-from indexerCommand import ControlIndexer
-from intakeCommand import ControlIntake
-from shooterCommand import ControlFlywheel
+from commands.indexerCommand import ControlIndexer
+from commands.intakeCommand import ControlIntake
+from commands.flywheelCommand import ControlFlywheel
 
-from shooter import Shooter
+from subsystems.shooter import Shooter
 
-from intake import Intake
+from subsystems.intake import Intake
 
 
 
@@ -86,7 +85,7 @@ class RobotContainer:
         self._ledsubsystem = LEDSubsystem()
         self._intake =  Intake()
         self._shooter = Shooter()
-        self._intake.setDefaultCommand(Enable_Intake(self._intake, False, False))
+        self._intake.setDefaultCommand(ControlIntake(self._intake, False, False))
         self._shooter.setDefaultCommand(ControlFlywheel(self._shooter, 0))
         self._shooter.setDefaultCommand(ControlIndexer(self._shooter, 0))
         
@@ -147,17 +146,17 @@ class RobotContainer:
  
         self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.67))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._driver_controller.leftTrigger().whileTrue(Enable_Intake(self._intake, True, False))
-        self._driver_controller.leftTrigger().whileFalse(Enable_Intake(self._intake, False, False))
+        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, True, False))
+        #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
         self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.67))
         self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
-        self._partner_controller.a().whileTrue(ControlFlywheel(self._shooter, 0.67))
-        self._partner_controller.b().whileTrue(ControlFlywheel(self._shooter, 0))
-        self._partner_controller.x().onTrue(Enable_Intake(self._intake, True, False))
-        self._partner_controller.x().onFalse(Enable_Intake(self._intake, False, False))
-        self._partner_controller.y().onTrue(Enable_Intake(self._intake, True, True))
-        self._partner_controller.y().onFalse(Enable_Intake(self._intake, False, True))
+        self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, 0.67))
+        self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
+        self._partner_controller.x().onTrue(ControlIntake(self._intake, True, False))
+        #self._partner_controller.x().onFalse(ControlIntake(self._intake, False, False))
+        self._partner_controller.y().onTrue(ControlIntake(self._intake, True, True))
+        #self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
 
 
         # self._driver_controller.b().whileTrue(
