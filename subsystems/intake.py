@@ -24,12 +24,12 @@ class Intake(Subsystem):
         super().__init__()
         self._intake_motor: TalonFX = self.__configure_intake()  # Instantiate motor
         self.intake_duty_cycle_out = controls.DutyCycleOut(0.0)  # Instantiate speed control object
-        self.motor_speed_global = 0.5  # Initial speed
+        self.motor_speed_global = 1  # Initial speed
         self.intake_enabled = False
         self.intake_reversed = False
 
     def __configure_intake(self) -> TalonFX:
-        talon = TalonFX(30)
+        talon = TalonFX(30, "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)

@@ -38,16 +38,16 @@ class Shooter(Subsystem):
         
         self.motor_speed_global = 0.5  # Initial speed
 
-    def __configure_indexer(self,) -> TalonFX:
-        talon = TalonFX(21)
+    def __configure_indexer(self) -> TalonFX:
+        talon = TalonFX(21, "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
 
         return talon
 
-    def __configure_flywheel(self,) -> TalonFX:
-        talon = TalonFX(20)     # CAN Bus Address
+    def __configure_flywheel(self) -> TalonFX:
+        talon = TalonFX(20, "canivore1")     # CAN Bus Address
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
@@ -57,6 +57,7 @@ class Shooter(Subsystem):
     def flywheel_spin(self, flywheel_spinspeed: float) -> None:
         self.flywheel_duty_cycle_out.output = flywheel_spinspeed
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
+        print("FLYWHEEL===================================================================")
         # rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
         # rotor_velocity.refresh()
         # velocity_value = rotor_velocity.value

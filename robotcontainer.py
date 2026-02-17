@@ -85,9 +85,9 @@ class RobotContainer:
         self._ledsubsystem = LEDSubsystem()
         self._intake =  Intake()
         self._shooter = Shooter()
-        self._intake.setDefaultCommand(ControlIntake(self._intake, False, False))
-        self._shooter.setDefaultCommand(ControlFlywheel(self._shooter, 0))
-        self._shooter.setDefaultCommand(ControlIndexer(self._shooter, 0))
+        # self._intake.setDefaultCommand(ControlIntake(self._intake, False, False))
+        # self._shooter.setDefaultCommand(ControlFlywheel(self._shooter, 0))
+        # self._shooter.setDefaultCommand(ControlIndexer(self._shooter, 0))
         
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
@@ -144,18 +144,18 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
  
-        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.67))
+        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, True, False))
         #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
-        self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.67))
+        self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
         self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
-        self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, 0.67))
+        self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._partner_controller.x().onTrue(ControlIntake(self._intake, True, False))
         #self._partner_controller.x().onFalse(ControlIntake(self._intake, False, False))
-        self._partner_controller.y().onTrue(ControlIntake(self._intake, True, True))
+        self._partner_controller.y().onTrue(ControlIntake(self._intake, False, True))
         #self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
 
 
