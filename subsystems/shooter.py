@@ -2,6 +2,12 @@ from enum import Enum
 import wpilib
 from commands2 import Subsystem, Command, RunCommand
 from wpilib import SmartDashboard, RobotBase, RobotController, DutyCycleEncoder
+
+from utils.logger import (
+    log_debug,
+    log_smartdashboard_number,
+    log_smartdashboard_boolean,
+)
 from wpilib.simulation import FlywheelSim
 from wpimath.system.plant import DCMotor
 from phoenix6.configs import (
@@ -11,10 +17,19 @@ from phoenix6.configs import (
 from phoenix6 import hardware, controls, signals
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.controls.follower import Follower
-from phoenix6.signals.spn_enums import InvertedValue, NeutralModeValue, ForwardLimitValue, ReverseLimitValue
+from phoenix6.signals.spn_enums import (
+    InvertedValue,
+    NeutralModeValue,
+    ForwardLimitValue,
+    ReverseLimitValue,
+)
 from phoenix6.unmanaged import feed_enable
 from phoenix6.configs import TalonFXConfiguration
-from phoenix6.signals.spn_enums import (InvertedValue, NeutralModeValue, FeedbackSensorSourceValue)
+from phoenix6.signals.spn_enums import (
+    InvertedValue,
+    NeutralModeValue,
+    FeedbackSensorSourceValue,
+)
 from phoenix6 import StatusCode
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.controls.follower import Follower
@@ -35,7 +50,7 @@ class Shooter(Subsystem):
         self.flywheel_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.indexer_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.counter = 0
-        
+
         self.motor_speed_global = 0.5  # Initial speed
 
     def __configure_indexer(self) -> TalonFX:
@@ -87,7 +102,7 @@ class Shooter(Subsystem):
         #print(f"Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
         wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", velocity_value)
 
-    def indexer_spin(self,indexer_spinspeed: float) -> None:
+    def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.indexer_duty_cycle_out.output = indexer_spinspeed
         self._shooter_indexer.set_control(self.indexer_duty_cycle_out)
         wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
