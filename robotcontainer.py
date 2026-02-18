@@ -17,6 +17,8 @@ from pathplannerlib.auto import AutoBuilder
 from phoenix6 import swerve
 from wpilib import DriverStation, SmartDashboard
 from wpimath.geometry import Rotation2d
+
+from utils.logger import log_debug, log_smartdashboard_string
 from wpimath.units import rotationsToRadians
 
 from subsystems.ledsubsystem import LEDSubsystem
@@ -26,7 +28,6 @@ from indexerCommand import ControlIndexer
 from intakeCommand import ControlIntake
 
 from intake import Intake
-
 
 
 class RobotContainer:
@@ -69,11 +70,8 @@ class RobotContainer:
         )
         self._brake = swerve.requests.SwerveDriveBrake()
         self._point = swerve.requests.PointWheelsAt()
-        self._forward_straight = (
-            swerve.requests.RobotCentric()
-            .with_drive_request_type(
-                swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
-            )
+        self._forward_straight = swerve.requests.RobotCentric().with_drive_request_type(
+            swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
         )
 
         self._logger = Telemetry(self._max_speed)
@@ -84,8 +82,8 @@ class RobotContainer:
 
         self._ledsubsystem = LEDSubsystem()
 
-        self._intake =  Intake()
-        
+        self._intake = Intake()
+
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
         SmartDashboard.putData("Auto Mode", self._auto_chooser)
@@ -103,36 +101,53 @@ class RobotContainer:
         # Note that X is defined as forward according to WPILib convention,
         # and Y is defined as to the left according to WPILib convention.
 
-        move_speed_reduction = 0.8    #### Added to reduce speed while learning about swerve
-        rotate_speed_reduction = 1.0  ###  NOTE THAT updating _max_speed did not seem to affect speed
+        move_speed_reduction = (
+            0.8  #### Added to reduce speed while learning about swerve
+        )
+        rotate_speed_reduction = (
+            1.0  ###  NOTE THAT updating _max_speed did not seem to affect speed
+        )
         dead_zone = 0.055
         exp_scaling = 1.4
-
 
         self.drivetrain.setDefaultCommand(
             # Drivetrain will execute this command periodically
             self.drivetrain.apply_request(
                 lambda: (
-                    (self._drive_field_centric if self._is_field_centric else self._drive_robot_centric)
+                    (
+                        self._drive_field_centric
+                        if self._is_field_centric
+                        else self._drive_robot_centric
+                    )
                     .with_velocity_x(
                         # -self._joystick.getLeftY() * self._max_speed  * move_speed_reduction
-                        -self.apply_deadzone_and_curve( self._joystick.getLeftY(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
+                        -self.apply_deadzone_and_curve(
+                            self._joystick.getLeftY(), dead_zone, exp_scaling
+                        )
+                        * self._max_speed
+                        * move_speed_reduction
                         #### DF:  Updated:  Negated
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
                         # -self._joystick.getLeftX() * self._max_speed * move_speed_reduction
-                        -self.apply_deadzone_and_curve( self._joystick.getLeftX(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
+                        -self.apply_deadzone_and_curve(
+                            self._joystick.getLeftX(), dead_zone, exp_scaling
+                        )
+                        * self._max_speed
+                        * move_speed_reduction
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
                         # -self._joystick.getRightX() * self._max_angular_rate    #### DF:  Original
-                        -self._joystick.getRightX() * self._max_angular_rate * rotate_speed_reduction
-                              #### DF:  Updated:  Negated
+                        -self._joystick.getRightX()
+                        * self._max_angular_rate
+                        * rotate_speed_reduction
+                        #### DF:  Updated:  Negated
                     )  # Drive counterclockwise with negative X (left)
                 )
             )
         )
 
-        self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, 0.5))
+        self._ledsubsystem.setDefaultCommand(LEDCommand(self._ledsubsystem, 0.5))
 
         # Idle while the robot is disabled. This ensures the configured
         # neutral mode is applied to the drive motors while disabled.
@@ -142,8 +157,8 @@ class RobotContainer:
         )
 
         self._joystick.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
-        self._joystick.a().whileFalse(LEDCommand( self._ledsubsystem, 0))
-        self._joystick.a().whileTrue(LEDCommand( self._ledsubsystem, 135))
+        self._joystick.a().whileFalse(LEDCommand(self._ledsubsystem, 0))
+        self._joystick.a().whileTrue(LEDCommand(self._ledsubsystem, 135))
 
         self._joystick.x().onTrue(Enable_Intake(self._intake, True))
 
@@ -194,16 +209,18 @@ class RobotContainer:
         """Toggle between RobotCentric and FieldCentric drive modes."""
         self._is_field_centric = not self._is_field_centric
         mode_name = "FieldCentric" if self._is_field_centric else "RobotCentric"
-        SmartDashboard.putString("Drive Mode", mode_name)
-        print(f"Drive mode switched to: {mode_name}")
+        log_smartdashboard_string("Drive Mode", mode_name, min_verbosity=1)
+        log_debug(f"Drive mode switched to: {mode_name}", min_verbosity=1)
 
-    def apply_deadzone_and_curve(self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0) -> float:
+    def apply_deadzone_and_curve(
+        self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
+    ) -> float:
         if abs(axis_value) < deadzone:
             return 0.0
         # Normalize to 0-1 range after deadzone
         normalized = (abs(axis_value) - deadzone) / (1.0 - deadzone)
         # Apply curve (e.g., square for smoother ramp)
-        curved = normalized ** exponent
+        curved = normalized**exponent
         # Reapply sign
         final = curved * (1 if axis_value > 0 else -1)
         return final
