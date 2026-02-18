@@ -29,7 +29,11 @@ from subsystems.shooter import Shooter
 
 from subsystems.intake import Intake
 
-
+#================================================================
+# DF: Added to quiet Console log
+import wpilib
+from wpilib import LiveWindow
+#================================================================
 
 class RobotContainer:
     """
@@ -40,6 +44,31 @@ class RobotContainer:
     """
 
     def __init__(self) -> None:
+
+#================================================================
+# DF: Added to quiet Console log
+
+        wpilib.DriverStation.silenceJoystickConnectionWarning(True)
+
+        # The function FRC LiveWindow.disableAllTelemetry() is a static method 
+        # in the FRC (FIRST Robotics Competition) WPILib library that disables t
+        # he sending of data for all sensors and actuators to the SmartDashboard 
+        # or Shuffleboard LiveWindow display.  
+
+        LiveWindow.disableAllTelemetry()
+        
+        # https://robotpy.readthedocs.io/projects/robotpy/en/latest/wpilib/LiveWindow.html        
+
+        #    We are getting a number of Watch Dog errors due to excessive time being taken up by RobotPeriodic().
+        #    Near line 320, is a command "register_telemetry" which appears to cause the motors to create and log
+        #    telemetry  data.  By removing  this line, the errors have disappeared.   This is needed for simulation.
+        #    NOTE: It appears some CTRE settings require power cycling to update the configuration.
+        #
+#============================================================================
+
+
+
+
         self._max_speed = (
             TunerConstants.speed_at_12_volts
         )  # speed_at_12_volts desired top speed
