@@ -16,6 +16,8 @@ from pathplannerlib.auto import AutoBuilder
 from phoenix6 import swerve
 from wpilib import DriverStation, SmartDashboard
 from wpimath.geometry import Rotation2d
+
+from utils.logger import log_debug, log_smartdashboard_string
 from wpimath.units import rotationsToRadians
 
 from subsystems.ledsubsystem import LEDSubsystem
@@ -102,11 +104,8 @@ class RobotContainer:
         )
         self._brake = swerve.requests.SwerveDriveBrake()
         self._point = swerve.requests.PointWheelsAt()
-        self._forward_straight = (
-            swerve.requests.RobotCentric()
-            .with_drive_request_type(
-                swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
-            )
+        self._forward_straight = swerve.requests.RobotCentric().with_drive_request_type(
+            swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
         )
 
         self._logger = Telemetry(self._max_speed)
@@ -147,7 +146,11 @@ class RobotContainer:
             # Drivetrain will execute this command periodically
             self.drivetrain.apply_request(
                 lambda: (
-                    (self._drive_field_centric if self._is_field_centric else self._drive_robot_centric)
+                    (
+                        self._drive_field_centric
+                        if self._is_field_centric
+                        else self._drive_robot_centric
+                    )
                     .with_velocity_x(
                         # -self._driver_controller.getLeftY() * self._max_speed  * move_speed_reduction
                         -self.apply_deadzone_and_curve( self._driver_controller.getLeftY(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
@@ -232,13 +235,15 @@ class RobotContainer:
         print(f"Drive mode switched to: {mode_name}")
         print("67")
 
-    def apply_deadzone_and_curve(self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0) -> float:
+    def apply_deadzone_and_curve(
+        self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
+    ) -> float:
         if abs(axis_value) < deadzone:
             return 0.0
         # Normalize to 0-1 range after deadzone
         normalized = (abs(axis_value) - deadzone) / (1.0 - deadzone)
         # Apply curve (e.g., square for smoother ramp)
-        curved = normalized ** exponent
+        curved = normalized**exponent
         # Reapply sign
         final = curved * (1 if axis_value > 0 else -1)
         return final
