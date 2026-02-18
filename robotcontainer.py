@@ -141,7 +141,6 @@ class RobotContainer:
         dead_zone = 0.055
         exp_scaling = 1.3
 
-
         self.drivetrain.setDefaultCommand(
             # Drivetrain will execute this command periodically
             self.drivetrain.apply_request(
@@ -152,18 +151,28 @@ class RobotContainer:
                         else self._drive_robot_centric
                     )
                     .with_velocity_x(
-                        # -self._driver_controller.getLeftY() * self._max_speed  * move_speed_reduction
-                        -self.apply_deadzone_and_curve( self._driver_controller.getLeftY(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
+                        # -self._joystick.getLeftY() * self._max_speed  * move_speed_reduction
+                        -self.apply_deadzone_and_curve(
+                            self._joystick.getLeftY(), dead_zone, exp_scaling
+                        )
+                        * self._max_speed
+                        * move_speed_reduction
                         #### DF:  Updated:  Negated
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
-                        # -self._driver_controller.getLeftX() * self._max_speed * move_speed_reduction
-                        -self.apply_deadzone_and_curve( self._driver_controller.getLeftX(), dead_zone, exp_scaling ) * self._max_speed  * move_speed_reduction
+                        # -self._joystick.getLeftX() * self._max_speed * move_speed_reduction
+                        -self.apply_deadzone_and_curve(
+                            self._joystick.getLeftX(), dead_zone, exp_scaling
+                        )
+                        * self._max_speed
+                        * move_speed_reduction
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
-                        # -self._driver_controller.getRightX() * self._max_angular_rate    #### DF:  Original
-                        -self._driver_controller.getRightX() * self._max_angular_rate * rotate_speed_reduction
-                              #### DF:  Updated:  Negated
+                        # -self._joystick.getRightX() * self._max_angular_rate    #### DF:  Original
+                        -self._joystick.getRightX()
+                        * self._max_angular_rate
+                        * rotate_speed_reduction
+                        #### DF:  Updated:  Negated
                     )  # Drive counterclockwise with negative X (left)
                 )
             )
@@ -231,9 +240,8 @@ class RobotContainer:
         """Toggle between RobotCentric and FieldCentric drive modes."""
         self._is_field_centric = not self._is_field_centric
         mode_name = "FieldCentric" if self._is_field_centric else "RobotCentric"
-        SmartDashboard.putString("Drive Mode", mode_name)
-        print(f"Drive mode switched to: {mode_name}")
-        print("67")
+        log_smartdashboard_string("Drive Mode", mode_name, min_verbosity=1)
+        log_debug(f"Drive mode switched to: {mode_name}", min_verbosity=1)
 
     def apply_deadzone_and_curve(
         self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
