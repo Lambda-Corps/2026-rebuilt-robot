@@ -14,7 +14,8 @@ class Telemetry:
         """
         self._max_speed = max_speed
         # SignalLogger.start()
-        # SignalLogger.stop()
+        SignalLogger.stop()
+        ##  DF:  Trying to stop writing to SmartDashboard
 
         # What to publish over networktables for telemetry
         self._inst = NetworkTableInstance.getDefault()
