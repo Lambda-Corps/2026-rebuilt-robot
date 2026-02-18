@@ -67,7 +67,6 @@ class Shooter(Subsystem):
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
         return talon
-    
 
     def flywheel_spin(self, flywheel_spinspeed: float) -> None:
         self.flywheel_duty_cycle_out.output = flywheel_spinspeed
@@ -107,10 +106,8 @@ class Shooter(Subsystem):
         self._shooter_indexer.set_control(self.indexer_duty_cycle_out)
         wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
 
-
-    def change_speed_variable_function(self, speed_update : float) -> None:
-        
-        if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
+    def change_speed_variable_function(self, speed_update: float) -> None:
+        if (self.motor_speed_global > -1) and (self.motor_speed_global < 1):
             self.motor_speed_global = self.motor_speed_global + speed_update
         
 
