@@ -109,7 +109,7 @@ class Shooter(Subsystem):
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
-        return True
+        # return True
         if velocity_value > 20:
             return True 
         else:return False
