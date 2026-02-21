@@ -108,7 +108,7 @@ class Shooter(Subsystem):
     def is_shooter_spinning(self) -> bool :
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
         rotor_velocity.refresh()
-        velocity_value = rotor_velocity.value
+        velocity_value = -rotor_velocity.value
         # return True
         if velocity_value > 20:
             return True 
