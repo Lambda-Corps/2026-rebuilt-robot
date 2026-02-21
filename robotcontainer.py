@@ -190,6 +190,9 @@ class RobotContainer:
         self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, True, False))
         #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
+        self._driver_controller.povUp().onTrue(self._shooter.change_speed_variable_function(0.05))
+        self._driver_controller.povDown().onTrue(self._shooter.change_speed_variable_function(-0.05))
+
         self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
         self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
         self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))

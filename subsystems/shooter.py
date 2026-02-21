@@ -14,7 +14,7 @@ from phoenix6.configs import (
     TalonFXConfiguration,
     TalonFXConfigurator,
 )
-from phoenix6 import hardware, controls, signals
+from phoenix6 import hardware, controls, signals, utils
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.controls.follower import Follower
 from phoenix6.signals.spn_enums import (
@@ -54,7 +54,7 @@ class Shooter(Subsystem):
         self.motor_speed_global = 0.5  # Initial speed
 
     def __configure_indexer(self) -> TalonFX:
-        talon = TalonFX(21, "canivore1")
+        talon = TalonFX(21, "" if utils.is_Simulation() else "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
@@ -62,16 +62,18 @@ class Shooter(Subsystem):
         return talon
 
     def __configure_flywheel(self) -> TalonFX:
-        talon = TalonFX(20, "canivore1")     # CAN Bus Address
+        talon = TalonFX(20, "" if utils.is_Simulation() else "canivore1")     # CAN Bus Address
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
         return talon
 
     def flywheel_spin(self, flywheel_spinspeed: float) -> None:
-        self.flywheel_duty_cycle_out.output = flywheel_spinspeed
-        self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-        print("FLYWHEEL===================================================================")
+            self.motor_speed_global=+flywheel_spinspeed
+            self.flywheel_duty_cycle_out.output = self.motor_speed_global
+            self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
+            
+
         # rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
         # rotor_velocity.refresh()
         # velocity_value = rotor_velocity.value
@@ -132,9 +134,11 @@ class Shooter(Subsystem):
         wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
 
     def change_speed_variable_function(self, speed_update: float) -> None:
-        if (self.motor_speed_global > -1) and (self.motor_speed_global < 1):
-            self.motor_speed_global = self.motor_speed_global + speed_update
-            log_debug(
-                f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem",
-                min_verbosity=5,
-            )
+        newMotorSpeed += speed_update
+
+        if newMotorSpeed > 1:
+            self.motor_speed_global = 1
+        elif newMotorSpeed < -1:
+            self.motor_speed_global = -1
+        else:
+            self.motor_speed_global = newMotorSpeed
