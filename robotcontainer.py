@@ -117,7 +117,7 @@ class RobotContainer:
         # self._intake.setDefaultCommand(ControlIntake(self._intake, False, False))
         # self._shooter.setDefaultCommand(ControlFlywheel(self._shooter, 0))
         # self._shooter.setDefaultCommand(ControlIndexer(self._shooter, 0))
-        self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, 0.5))
+        self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter, self._intake))
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
         SmartDashboard.putData("Auto Mode", self._auto_chooser)
