@@ -29,6 +29,8 @@ from subsystems.shooter import Shooter
 
 from subsystems.intake import Intake
 
+from commands.LEDrainbow import LEDrainbow
+
 #================================================================
 # DF: Added to quiet Console log
 import wpilib
@@ -175,6 +177,7 @@ class RobotContainer:
         self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, True, False))
+        self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
         #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
         self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
