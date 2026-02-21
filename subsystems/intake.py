@@ -24,19 +24,24 @@ class Intake(Subsystem):
         super().__init__()
         self._intake_motor: TalonFX = self.__configure_intake()  # Instantiate motor
         self.intake_duty_cycle_out = controls.DutyCycleOut(0.0)  # Instantiate speed control object
-        self.motor_speed_global = 0.5  # Initial speed
+        self.motor_speed_global = 1  # Initial speed
         self.intake_enabled = False
+        self.intake_reversed = False
 
     def __configure_intake(self) -> TalonFX:
-        talon = TalonFX(30)
+        talon = TalonFX(30, "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
         return talon
     
-    def intake_speed_global_control(self) -> None:       
-        if (self.intake_enabled):                                         # Global control of intake speed
+    def intake_speed_global_control(self) -> None:
+        #print("Global Control Ran~")  
+        if (self.intake_enabled and not self.intake_reversed):                                         # Global control of intake speed
             self.intake_duty_cycle_out.output = self.motor_speed_global    # Speed set by global variable
+            self._intake_motor.set_control(self.intake_duty_cycle_out)
+        elif (self.intake_enabled and self.intake_reversed):
+            self.intake_duty_cycle_out.output = self.motor_speed_global * -1
             self._intake_motor.set_control(self.intake_duty_cycle_out)
         else:
             self.intake_duty_cycle_out.output = 0           # Speed set by global variable
@@ -49,16 +54,17 @@ class Intake(Subsystem):
 
         wpilib.SmartDashboard.putNumber("Intake Speed: ", self.motor_speed_global)
         wpilib.SmartDashboard.putNumber("Intake Velocity: ", velocity_value)
-        wpilib.SmartDashboard.putBoolean("Intake Enable: ", self.intake_enabled)
 
-    def change_speed_variable_function(self, speed_update : float) -> None:
-        if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
-            self.motor_speed_global = self.motor_speed_global + speed_update
-        print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
+    # def change_speed_variable_function(self, speed_update : float) -> None:
+    #     if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
+    #         self.motor_speed_global = self.motor_speed_global + speed_update
+    #     #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
 
-    def enable_intake(self, enable):
+    def enable_intake(self, enable, reverse):
         self.intake_enabled  = enable
-        print (f">>>> self.intake_enabled {self.intake_enabled}")
+        self.intake_reversed = reverse
+        #print (f">>>> self.intake_enabled {self.intake_enabled}")
+        self.intake_speed_global_control()
 
 
         # added comment (testing source control)
