@@ -9,7 +9,7 @@ class LEDSubsystem(Subsystem):
    def __init__(self) -> None:
        super().__init__()      # Call the initialization routing of the parent Object
 
-       self.kLEDBuffer = 5      # Number of LEDs
+       self.kLEDBuffer = 40      # Number of LEDs
 
        # Instantiate the LED Object on RoboRIO PWM Pin 9
        self.LED = wpilib.AddressableLED(9)

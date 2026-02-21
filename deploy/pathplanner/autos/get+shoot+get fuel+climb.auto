@@ -1,0 +1,49 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "lester test pt1 get balls"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "lester test pt2 shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "lester test pt3 go to middle"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "lester test pt4 get balls"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "lester test pt5 go our side"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "lester test pt6 shoot+climb"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": false,
+  "folder": null,
+  "choreoAuto": false
+}
