@@ -29,7 +29,7 @@ class Intake(Subsystem):
         self.intake_reversed = False
 
     def __configure_intake(self) -> TalonFX:
-        talon = TalonFX(30, "" if utils.is_Simulation() else "canivore1")
+        talon = TalonFX(30, "" if utils.is_simulation() else "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
