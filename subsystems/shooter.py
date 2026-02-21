@@ -52,9 +52,10 @@ class Shooter(Subsystem):
         self.counter = 0
 
         self.motor_speed_global = 0.5  # Initial speed
+        self.newMotorSpeed = self.motor_speed_global
 
     def __configure_indexer(self) -> TalonFX:
-        talon = TalonFX(21, "" if utils.is_Simulation() else "canivore1")
+        talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
@@ -62,16 +63,16 @@ class Shooter(Subsystem):
         return talon
 
     def __configure_flywheel(self) -> TalonFX:
-        talon = TalonFX(20, "" if utils.is_Simulation() else "canivore1")     # CAN Bus Address
+        talon = TalonFX(20, "" if utils.is_simulation() else "canivore1")     # CAN Bus Address
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
         return talon
 
     def flywheel_spin(self, flywheel_spinspeed: float) -> None:
-            self.motor_speed_global=+flywheel_spinspeed
-            self.flywheel_duty_cycle_out.output = self.motor_speed_global
-            self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
+        self.motor_speed_global=flywheel_spinspeed
+        self.flywheel_duty_cycle_out.output = self.motor_speed_global
+        self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
             
 
         # rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
@@ -103,30 +104,30 @@ class Shooter(Subsystem):
         #print(f"Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
         wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", velocity_value)
 
-    def indexer_spin(self,indexer_spinspeed: float) -> None:
-        # Get the Velocity of the wheel in Rotations per second
-        rotor_velocity = (
-            self._shooter_flywheel.get_rotor_velocity()
-        )  # Get the flywheel speed
-        rotor_velocity.refresh()
-        velocity_value = rotor_velocity.value
-        # print(f"Counter: {self.counter}     Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
+    # def indexer_spin(self,indexer_spinspeed: float) -> None:
+    #     # Get the Velocity of the wheel in Rotations per second
+    #     rotor_velocity = (
+    #         self._shooter_flywheel.get_rotor_velocity()
+    #     )  # Get the flywheel speed
+    #     rotor_velocity.refresh()
+    #     velocity_value = rotor_velocity.value
+    #     # print(f"Counter: {self.counter}     Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
 
-        log_smartdashboard_number(
-            "FlyWheel Speed: ",
-            self.motor_speed_global,
-            min_verbosity=10,
-            update_frequency=10,
-        )
-        log_smartdashboard_number(
-            "FlyWheel Velocity: ", velocity_value, min_verbosity=10, update_frequency=10
-        )
-        log_smartdashboard_boolean(
-            "Flywheel Enable: ",
-            self.flywheel_enabled,
-            min_verbosity=10,
-            update_frequency=10,
-        )
+    #     log_smartdashboard_number(
+    #         "FlyWheel Speed: ",
+    #         self.motor_speed_global,
+    #         min_verbosity=10,
+    #         update_frequency=10,
+    #     )
+    #     log_smartdashboard_number(
+    #         "FlyWheel Velocity: ", velocity_value, min_verbosity=10, update_frequency=10
+    #     )
+    #     log_smartdashboard_boolean(
+    #         "Flywheel Enable: ",
+    #         self.flywheel_enabled,
+    #         min_verbosity=10,
+    #         update_frequency=10,
+    #     )
 
     def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.indexer_duty_cycle_out.output = indexer_spinspeed
@@ -134,11 +135,11 @@ class Shooter(Subsystem):
         wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
 
     def change_speed_variable_function(self, speed_update: float) -> None:
-        newMotorSpeed += speed_update
+        self.newMotorSpeed += speed_update
 
-        if newMotorSpeed > 1:
+        if self.newMotorSpeed > 1:
             self.motor_speed_global = 1
-        elif newMotorSpeed < -1:
+        elif self.newMotorSpeed < -1:
             self.motor_speed_global = -1
         else:
-            self.motor_speed_global = newMotorSpeed
+            self.motor_speed_global = self.newMotorSpeed
