@@ -117,7 +117,7 @@ class RobotContainer:
         # self._intake.setDefaultCommand(ControlIntake(self._intake, False, False))
         # self._shooter.setDefaultCommand(ControlFlywheel(self._shooter, 0))
         # self._shooter.setDefaultCommand(ControlIndexer(self._shooter, 0))
-        
+        self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, 0.5))
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
         SmartDashboard.putData("Auto Mode", self._auto_chooser)
@@ -164,7 +164,6 @@ class RobotContainer:
             )
         )
 
-        self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, 0.5))
 
         # Idle while the robot is disabled. This ensures the configured
         # neutral mode is applied to the drive motors while disabled.
