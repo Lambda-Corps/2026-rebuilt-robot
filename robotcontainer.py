@@ -135,10 +135,10 @@ class RobotContainer:
         # Note that X is defined as forward according to WPILib convention,
         # and Y is defined as to the left according to WPILib convention.
 
-        move_speed_reduction = 0.8    #### Added to reduce speed while learning about swerve
+        move_speed_reduction = 0.48    #### Added to reduce speed while learning about swerve
         rotate_speed_reduction = 1.0  ###  NOTE THAT updating _max_speed did not seem to affect speed
         dead_zone = 0.055
-        exp_scaling = 1.4
+        exp_scaling = 1.3
 
 
         self.drivetrain.setDefaultCommand(
@@ -186,15 +186,6 @@ class RobotContainer:
         #self._partner_controller.x().onFalse(ControlIntake(self._intake, False, False))
         self._partner_controller.y().onTrue(ControlIntake(self._intake, False, True))
         #self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
-
-
-        # self._driver_controller.b().whileTrue(
-        #     self.drivetrain.apply_request(
-        #         lambda: self._point.with_module_direction(
-        #             Rotation2d(-self._driver_controller.getLeftY(), -self._driver_controller.getLeftX())
-        #         )
-        #     )
-        # )
 
         self._driver_controller.pov(0).whileTrue(
             self.drivetrain.apply_request(
