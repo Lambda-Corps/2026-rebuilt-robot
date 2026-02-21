@@ -68,3 +68,15 @@ class LEDSubsystem(Subsystem):
        for i in range(self.kLEDBuffer):
            self.ledData[i].setHSV(int(hue), 255, 128)
        self.LED.setData(self.ledData)
+
+   def blue(self):
+       for i in range(self.kLEDBuffer):
+           hue = 230  # blue
+           self.ledData[i].setHSV(int(hue), 255, 128)
+       self.LED.setData(self.ledData) 
+
+   def purple(self):
+       for i in range(self.kLEDBuffer):
+           hue = 285  # purple
+           self.ledData[i].setHSV(int(hue), 255, 128)
+       self.LED.setData(self.ledData)      
