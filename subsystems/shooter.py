@@ -151,11 +151,11 @@ class Shooter(Subsystem):
     #     self.flywheel_enabled  = enable
     #     self.flywheel_spin(flywheel_spinspeed)
 
-    def is_shooter_spinning(self) -> bool :
+    def is_shooter_spinning(self, thresholdPercent) -> bool :
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
         # rotor_velocity.refresh()
-        velocity_value = -rotor_velocity.value
+        currentSpeed=-rotor_velocity.value
         # return True
-        if velocity_value > 20:
+        if currentSpeed > thresholdPercent*self.motor_speed_global:
             return True 
         else:return False

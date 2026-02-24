@@ -28,6 +28,7 @@ from phoenix6.signals.spn_enums import (InvertedValue, NeutralModeValue, Feedbac
 from phoenix6 import StatusCode
 from wpilib import SmartDashboard, AnalogInput, RobotBase, Timer
 from subsystems.shooter import Shooter
+from subsystems.ledsubsystem import LEDSubsystem
 
 class ControlIndexer(Command):
     def __init__(self, sub: Shooter, speed: float):
@@ -42,8 +43,11 @@ class ControlIndexer(Command):
         pass
 
     def execute(self):
-        self._ShooterSubSys.indexer_spin(self._speed)
-
+        if (self._ShooterSubSys.is_shooter_spinning(0.3)):
+            self._ShooterSubSys.indexer_spin(self._speed)
+        else:
+            self._ShooterSubSys.flywheel_spin(0.5)
+            print("Flywheel getting ready.")
 
 
     def isFinished(self) -> bool:
