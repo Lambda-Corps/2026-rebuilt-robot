@@ -34,6 +34,8 @@ from subsystems.shooter import Shooter
 
 from subsystems.intake import Intake
 
+from commands.LEDrainbow import LEDrainbow
+
 from commands.changeSpeedFlywheel import ChangeFlywheelSpeed
 #================================================================
 # DF: Added to quiet Console log
@@ -122,6 +124,7 @@ class RobotContainer:
         # self._intake.setDefaultCommand(ControlIntake(self._intake, False, False))
         # self._shooter.setDefaultCommand(ControlFlywheel(self._shooter, 0))
         # self._shooter.setDefaultCommand(ControlIndexer(self._shooter, 0))
+        self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter, self._intake))
         
 
         # Path follower
@@ -202,6 +205,7 @@ class RobotContainer:
         self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, True, False))
+        self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
         #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
         self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))

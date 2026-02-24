@@ -139,9 +139,23 @@ class Shooter(Subsystem):
         print("Value Updating")
         self.newMotorSpeed += speed_update
 
-        if self.newMotorSpeed > 1:
-            self.motor_speed_global = 1
-        elif self.newMotorSpeed < -1:
-            self.motor_speed_global = -1
-        else:
-            self.motor_speed_global = self.newMotorSpeed
+    def change_speed_variable_function(self, speed_update : float) -> None:
+        
+        if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
+            self.motor_speed_global = self.motor_speed_global + speed_update
+        
+
+        #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
+
+    # def enable_flywheel(self, enable, flywheel_spinspeed):
+    #     self.flywheel_enabled  = enable
+    #     self.flywheel_spin(flywheel_spinspeed)
+
+    def is_shooter_spinning(self) -> bool :
+        rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
+        rotor_velocity.refresh()
+        velocity_value = -rotor_velocity.value
+        # return True
+        if velocity_value > 20:
+            return True 
+        else:return False

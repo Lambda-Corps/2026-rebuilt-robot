@@ -110,9 +110,9 @@ class Telemetry:
         self._field_pub.set(pose_array)
 
         # Telemeterize the module states to a Mechanism2d
-        for i, module_state in enumerate(state.module_states):
-            self._module_speeds[i].setAngle(module_state.angle.degrees())
-            self._module_directions[i].setAngle(module_state.angle.degrees())
-            self._module_speeds[i].setLength(module_state.speed / (2 * self._max_speed))
+        # for i, module_state in enumerate(state.module_states):
+        #     self._module_speeds[i].setAngle(module_state.angle.degrees())
+        #     self._module_directions[i].setAngle(module_state.angle.degrees())
+        #     self._module_speeds[i].setLength(module_state.speed / (2 * self._max_speed))
 
-            SmartDashboard.putData(f"Module {i}", self._module_mechanisms[i])
+        #     SmartDashboard.putData(f"Module {i}", self._module_mechanisms[i])
