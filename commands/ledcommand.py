@@ -24,13 +24,13 @@ class LEDCommand(Command):
         self.counter = self.counter+1
         if(self.counter > 10):
             self.counter = 0
-            if (not self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning()):
+            if (not self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning(.5)):
                 self.led.red()
-            elif (not self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning()):
+            elif (not self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning(.5)):
                 self.led.blue()
-            elif (self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning()):
+            elif (self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning(.5)):
                 self.led.green()  
-            elif (self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning()):
+            elif (self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning(.5)):
                 self.led.purple()  
    
 
