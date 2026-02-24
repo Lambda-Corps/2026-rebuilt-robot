@@ -29,7 +29,7 @@ from phoenix6 import StatusCode
 from wpilib import SmartDashboard, AnalogInput, RobotBase, Timer
 from subsystems.shooter import Shooter
 
-class ControlFlywheel(Command):
+class ChangeFlywheelSpeed(Command):
     def __init__(self, sub: Shooter, speed: float):
         super().__init__()
 
@@ -40,11 +40,11 @@ class ControlFlywheel(Command):
         self.addRequirements(self._Flywheel)  
 
     def initialize(self):
-        pass
-        #print("ControlFlywheel Called")
+        self._Flywheel.change_speed_variable_function(self._speed)
+        print("=======================================1")
 
     def execute(self):
-        self._Flywheel.flywheel_spin(self._speed)
+        pass
 
     def isFinished(self) -> bool:
         return True
