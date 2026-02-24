@@ -74,7 +74,7 @@ class Intake(Subsystem):
 
     def is_intake_spinning(self) -> bool :
         rotor_velocity = self._intake_motor.get_rotor_velocity()
-        rotor_velocity.refresh()
+        # rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
         print (velocity_value) 
         if velocity_value > 20:
