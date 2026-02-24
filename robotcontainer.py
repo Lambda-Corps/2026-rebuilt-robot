@@ -193,7 +193,7 @@ class RobotContainer:
             )
         )
 
-        self._ledsubsystem.setDefaultCommand(LEDCommand(self._ledsubsystem, 0.5))
+        # self._ledsubsystem.setDefaultCommand(LEDCommand(self._ledsubsystem, 0.5))
 
         # Idle while the robot is disabled. This ensures the configured
         # neutral mode is applied to the drive motors while disabled.
@@ -201,10 +201,11 @@ class RobotContainer:
         Trigger(DriverStation.isDisabled).whileTrue(
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
- 
+        #Consider chaining flywheel after indexer
         self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, True, False))
+        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, 0.65, False))
+        self._driver_controller.rightTrigger().whileTrue(ControlIntake(self._intake, 0, False))
         self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
         #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
@@ -212,9 +213,9 @@ class RobotContainer:
         self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
         self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._partner_controller.x().onTrue(ControlIntake(self._intake, True, False))
+        self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
         #self._partner_controller.x().onFalse(ControlIntake(self._intake, False, False))
-        self._partner_controller.y().onTrue(ControlIntake(self._intake, False, True))
+        self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
         #self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
 
         self._driver_controller.povUp().onTrue(ChangeFlywheelSpeed(self._shooter, 0.05))        

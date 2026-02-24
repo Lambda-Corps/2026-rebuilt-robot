@@ -14,19 +14,24 @@ class LEDCommand(Command):
         self.intake = Intake
       
         self.addRequirements(led)
-
+        self.counter = 0
     def initialize(self) -> None:
-        pass       #  This function is not being used.
+        pass
+               #  This function is not being used.
 
     def execute(self) -> None:
-        if (not self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning()):
-            self.led.red()
-        elif (not self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning()):
-            self.led.blue()
-        elif (self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning()):
-            self.led.green()  
-        elif (self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning()):
-            self.led.purple()  
+
+        self.counter = self.counter+1
+        if(self.counter > 10):
+            self.counter = 0
+            if (not self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning()):
+                self.led.red()
+            elif (not self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning()):
+                self.led.blue()
+            elif (self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning()):
+                self.led.green()  
+            elif (self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning()):
+                self.led.purple()  
    
 
     def end(self, interrupted: bool) -> None:

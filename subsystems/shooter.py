@@ -133,16 +133,16 @@ class Shooter(Subsystem):
     def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.indexer_duty_cycle_out.output = indexer_spinspeed
         self._shooter_indexer.set_control(self.indexer_duty_cycle_out)
-        wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
-
-    def change_speed_variable_function(self, speed_update: float) -> None:
-        print("Value Updating")
-        self.newMotorSpeed += speed_update
+        wpilib.SmartDashboard.putNumber("Indexer Speed: ", indexer_spinspeed)
 
     def change_speed_variable_function(self, speed_update : float) -> None:
         
         if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
             self.motor_speed_global = self.motor_speed_global + speed_update
+        elif self.motor_speed_global == -1:
+            self.motor_speed_global = -0.95
+        elif self.motor_speed_global == 1:
+            self.motor_speed_global = 0.95
         
 
         #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
@@ -153,7 +153,7 @@ class Shooter(Subsystem):
 
     def is_shooter_spinning(self) -> bool :
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
-        rotor_velocity.refresh()
+        # rotor_velocity.refresh()
         velocity_value = -rotor_velocity.value
         # return True
         if velocity_value > 20:
