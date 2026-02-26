@@ -7,7 +7,7 @@ from phoenix6.configs import (
     TalonFXConfiguration,
     TalonFXConfigurator,
 )
-from phoenix6 import hardware, controls, signals
+from phoenix6 import hardware, controls, signals, utils
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.controls.follower import Follower
 from phoenix6.signals.spn_enums import InvertedValue, NeutralModeValue, ForwardLimitValue, ReverseLimitValue
@@ -29,7 +29,7 @@ class Intake(Subsystem):
         self.intake_reversed = False
 
     def __configure_intake(self) -> TalonFX:
-        talon = TalonFX(30, "canivore1")
+        talon = TalonFX(30, "" if utils.is_simulation() else "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
@@ -71,3 +71,14 @@ class Intake(Subsystem):
         # Added Second Change comment
         # Addeing third Comments
         # Adding forth Comment
+
+    def is_intake_spinning(self) -> bool :
+        rotor_velocity = self._intake_motor.get_rotor_velocity()
+        # rotor_velocity.refresh()
+        velocity_value = rotor_velocity.value
+        print (velocity_value) 
+        if velocity_value > 20:
+            return True 
+        else:
+            return False
+        

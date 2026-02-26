@@ -1,29 +1,38 @@
 import wpilib
 from commands2 import Command
 from subsystems.ledsubsystem import LEDSubsystem
+from subsystems.shooter import Shooter
+from subsystems.intake import Intake
 
 class LEDCommand(Command):
-#    def __init__(self, led: LEDSubsystem, controller: wpilib.Joystick) -> None:
-    def __init__(self, led: LEDSubsystem, tempControlValue : float) -> None:
+
+    def __init__(self, led: LEDSubsystem, shooter: Shooter, Intake: Intake ) -> None:
         super().__init__()
 
         self.led = led
-    #    self.controller = controller
-        self.tempControlValue = tempControlValue
+        self.shooter = shooter
+        self.intake = Intake
       
         self.addRequirements(led)
-
+        self.counter = 0
     def initialize(self) -> None:
-        pass       #  This function is not being used.
+        pass
+               #  This function is not being used.
 
     def execute(self) -> None:
-    #    Xaxis = self.controller.getRawAxis(0)
-    #    Yaxis = self.controller.getRawAxis(1)
 
-        Xaxis = self.tempControlValue
-        Yaxis = self.tempControlValue
+        self.counter = self.counter+1
+        if(self.counter > 10):
+            self.counter = 0
+            if (not self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning(.5)):
+                self.led.red()
+            elif (not self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning(.5)):
+                self.led.blue()
+            elif (self.intake.is_intake_spinning()) and (not self.shooter.is_shooter_spinning(.5)):
+                self.led.green()  
+            elif (self.intake.is_intake_spinning()) and (self.shooter.is_shooter_spinning(.5)):
+                self.led.purple()  
    
-        self.led.joystickControlsColor(Xaxis,Yaxis)
 
     def end(self, interrupted: bool) -> None:
        pass       #  This function is not being used.
