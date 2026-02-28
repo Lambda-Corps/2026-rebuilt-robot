@@ -147,14 +147,13 @@ class RobotContainer:
         move_speed_reduction = 0.48    #### Added to reduce speed while learning about swerve
         rotate_speed_reduction = 1.0  ###  NOTE THAT updating _max_speed did not seem to affect speed
         move_speed_reduction = (
-            0.8  #### Added to reduce speed while learning about swerve
+            0.6  #### Added to reduce speed while learning about swerve
         )
         rotate_speed_reduction = (
-            1.0  ###  NOTE THAT updating _max_speed did not seem to affect speed
+            0.8  ###  NOTE THAT updating _max_speed did not seem to affect speed
         )
         dead_zone = 0.055
-        exp_scaling = 1.3
-        exp_scaling = 1.4
+        exp_scaling = 1.6
 
         self.drivetrain.setDefaultCommand(
             # Drivetrain will execute this command periodically
