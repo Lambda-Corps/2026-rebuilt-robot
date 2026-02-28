@@ -43,11 +43,11 @@ class ControlIndexer(Command):
         pass
 
     def execute(self):
-        if (self._ShooterSubSys.is_shooter_spinning(0.3)):
-            self._ShooterSubSys.indexer_spin(self._speed)
-        else:
-            self._ShooterSubSys.flywheel_spin(0.5)
-            print("Flywheel getting ready.")
+        # if (self._ShooterSubSys.is_shooter_spinning(0.3)):
+        self._ShooterSubSys.indexer_spin(self._speed)
+        # else:
+        #     self._ShooterSubSys.flywheel_spin(0.5)
+        #     print("Flywheel getting ready.")
 
 
     def isFinished(self) -> bool:
