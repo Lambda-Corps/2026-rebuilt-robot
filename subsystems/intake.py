@@ -76,7 +76,7 @@ class Intake(Subsystem):
         rotor_velocity = self._intake_motor.get_rotor_velocity()
         # rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
-        print (velocity_value) 
+        # print (velocity_value) 
         if velocity_value > 20:
             return True 
         else:
