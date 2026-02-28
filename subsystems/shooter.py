@@ -52,7 +52,6 @@ class Shooter(Subsystem):
         self.counter = 0
 
         self.motor_speed_global = 0.5  # Initial speed
-        self.newMotorSpeed = self.motor_speed_global
 
     def __configure_indexer(self) -> TalonFX:
         talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
@@ -69,10 +68,11 @@ class Shooter(Subsystem):
         talon.configurator.apply(config)
         return talon
 
-    def flywheel_spin(self, flywheel_spinspeed: float) -> None:
-        self.motor_speed_global=flywheel_spinspeed
+    def flywheel_spin(self) -> None:
         self.flywheel_duty_cycle_out.output = self.motor_speed_global
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
+        print("Flywheel Spinning")
+        print(self.flywheel_duty_cycle_out.output)
             
 
         # rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
@@ -139,10 +139,14 @@ class Shooter(Subsystem):
         
         if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
             self.motor_speed_global = self.motor_speed_global + speed_update
-        elif self.motor_speed_global == -1:
+            print("Speed Changed")
+            print(self.motor_speed_global)
+        elif self.motor_speed_global <= -1:
             self.motor_speed_global = -0.95
-        elif self.motor_speed_global == 1:
+            print("Lower Limit")
+        elif self.motor_speed_global >= 1:
             self.motor_speed_global = 0.95
+            print("Upper Limit")
         
 
         #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")

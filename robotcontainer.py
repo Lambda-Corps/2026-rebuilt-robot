@@ -217,9 +217,9 @@ class RobotContainer:
         self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
         #self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
 
-        # self._driver_controller.povUp().onTrue(ChangeFlywheelSpeed(self._shooter, 0.05))        
+        self._partner_controller.povUp().onTrue(ChangeFlywheelSpeed(self._shooter, 0.05))        
 
-        # self._driver_controller.povDown().onTrue(ChangeFlywheelSpeed(self._shooter, -0.05))
+        self._partner_controller.povDown().onTrue(ChangeFlywheelSpeed(self._shooter, -0.05))
 
         # self._driver_controller.pov(0).whileTrue(
         #     self.drivetrain.apply_request(
