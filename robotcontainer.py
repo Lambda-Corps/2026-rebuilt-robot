@@ -119,11 +119,12 @@ class RobotContainer:
         # self._shooter.setDefaultCommand(ControlIndexer(self._shooter, 0))
         
         # Path follower
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
-        SmartDashboard.putData("Auto Mode", self._auto_chooser)
+        # self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
+        # SmartDashboard.putData("Auto Mode", self._auto_chooser)
 
         # Configure the button bindings
         self.configureButtonBindings()
+        self.configure_path_planner()
 
     def configureButtonBindings(self) -> None:
         """
@@ -258,7 +259,9 @@ class RobotContainer:
         NamedCommands.registerCommand("run_Intake",ControlIntake(self._intake, 0.65, False))
         
         # Path follower
-        self._auto_chooser = AutoBuilder.buildAutoChooser("mid-field-shoot")
-        self._auto_chooser.addOption("Tests", PathPlannerAuto("mid field shoot"))
+        self._auto_chooser = AutoBuilder.buildAutoChooser("midfieldshoot")  # Parameter is default Path
+        self._auto_chooser.addOption("midfieldshoot", PathPlannerAuto("midfieldshoot"))
+        self._auto_chooser.addOption("outpost auto blue", PathPlannerAuto("outpost auto blue"))
+        self._auto_chooser.addOption("get+shoot+get fuel+climb", PathPlannerAuto("get+shoot+get fuel+climb"))
         SmartDashboard.putData("Auto Mode", self._auto_chooser)
 
