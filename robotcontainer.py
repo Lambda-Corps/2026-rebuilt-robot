@@ -12,7 +12,7 @@ from commands2.sysid import SysIdRoutine
 from generated.tuner_constants import TunerConstants
 from telemetry import Telemetry
 
-from pathplannerlib.auto import AutoBuilder
+from pathplannerlib.auto import AutoBuilder, NamedCommands, PathPlannerAuto
 from phoenix6 import swerve
 from wpilib import DriverStation, SmartDashboard
 from wpimath.geometry import Rotation2d
@@ -247,3 +247,18 @@ class RobotContainer:
         :returns: the command to run in autonomous
         """
         return self._auto_chooser.getSelected()
+    
+
+    def configure_path_planner(self):
+
+        # Named commands must be created before Autos can be defined
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -0.6))
+        NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, 0.6))
+        NamedCommands.registerCommand("startflywheelStop", ControlIndexer(self._shooter, 0.0))
+        NamedCommands.registerCommand("run_Intake",ControlIntake(self._intake, 0.65, False))
+        
+        # Path follower
+        self._auto_chooser = AutoBuilder.buildAutoChooser("mid-field-shoot")
+        self._auto_chooser.addOption("Tests", PathPlannerAuto("mid field shoot"))
+        SmartDashboard.putData("Auto Mode", self._auto_chooser)
+
