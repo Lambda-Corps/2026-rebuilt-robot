@@ -119,7 +119,7 @@ class RobotContainer:
         self._ledsubsystem = LEDSubsystem()
         self._intake =  Intake()
         self._shooter = Shooter() # Only used for indexer. Should be renamed. - MR
-        self._shooter_subsystem = ShooterSubsystem()  # DF Recommend disabling this line
+        # self._shooter_subsystem = ShooterSubsystem()  # DF Recommend disabling this line
 
         #DF 3/3/2026:
         # There are a number of methods in the old shooter subsystem used by Lucas's code
@@ -228,7 +228,7 @@ class RobotContainer:
         # self._driver_controller.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
         # self._driver_controller.a().whileFalse(LEDCommand(self._ledsubsystem, 0))
         # self._driver_controller.a().whileTrue(LEDCommand(self._ledsubsystem, 135))
-        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, 0.65, False))
+        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, 0.45, False))
         self._driver_controller.rightTrigger().whileTrue(ControlIntake(self._intake, 0, False))
         self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
@@ -256,12 +256,13 @@ class RobotContainer:
         self._partner_controller.b().onTrue(StopFlywheel(self._shooter))
 
 
-        self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
-        self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
+        self._partner_controller.x().onTrue(ControlIntake(self._intake, .45, False))
+        self._partner_controller.y().onTrue(ControlIntake(self._intake, 0, True))
+        self._partner_controller.leftTrigger().onTrue(ControlIntake(self._intake, .65, True))
         
         # During auto-aim, speed will be controled based on distance to target
-        self._partner_controller.povUp().onTrue(ChangeFlywheelSpeed(self._shooter, 0.05))        
-        self._partner_controller.povDown().onTrue(ChangeFlywheelSpeed(self._shooter, -0.05))
+        self._partner_controller.povUp().onTrue(ChangeFlywheelSpeed(self._shooter, -0.05))        
+        self._partner_controller.povDown().onTrue(ChangeFlywheelSpeed(self._shooter, 0.05))
 
         # No longer needed I think so commenting, but leaving for now - MR
         # # Run SysId routines when holding back/start and X/Y.
@@ -336,7 +337,8 @@ class RobotContainer:
                     get_rotation,
                 ),
                 ShooterCommand(
-                    self._shooter_subsystem,
+                    # self._shooter_subsystem,
+                    self._shooter,
                     lambda: self._driver_controller.getRightTriggerAxis(),
                 ),
             )

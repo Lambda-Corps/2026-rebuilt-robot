@@ -51,7 +51,7 @@ class Shooter(Subsystem):
         self.indexer_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.counter = 0
 
-        self.motor_speed_global = 0.5  # Initial speed
+        self.motor_speed_global = -0.5  # Initial speed
 
     def __configure_indexer(self) -> TalonFX:
         talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
@@ -99,15 +99,15 @@ class Shooter(Subsystem):
 
     def change_speed_variable_function(self, speed_update : float) -> None:
         
-        if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
+        if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 0)):
             self.motor_speed_global = self.motor_speed_global + speed_update
             print("Speed Changed")
             print(self.motor_speed_global)
         elif self.motor_speed_global <= -1:
             self.motor_speed_global = -0.95
             print("Lower Limit")
-        elif self.motor_speed_global >= 1:
-            self.motor_speed_global = 0.95
+        elif self.motor_speed_global >= 0:
+            self.motor_speed_global = -0.05
             print("Upper Limit")
 
     def is_shooter_spinning(self, thresholdPercent) -> bool :
@@ -124,12 +124,12 @@ class Shooter(Subsystem):
     def set_shooter_speed(self, duty_cycle: float) -> None:
         """Set shooter motor duty cycle (-1.0 to 1.0)."""
         self._shooter_duty_cycle = duty_cycle
-        self._shooter_motor.set_control(self._shooter_request.with_output(duty_cycle))
+        self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out.with_output(duty_cycle))
 
     def set_indexer_speed(self, duty_cycle: float) -> None:
         """Set indexer motor duty cycle (-1.0 to 1.0)."""
         self._indexer_duty_cycle = duty_cycle
-        self._indexer_motor.set_control(self._indexer_request.with_output(duty_cycle))
+        self._shooter_flywheel.set_control(self.indexer_duty_cycle_out.with_output(duty_cycle))
 
     def stop(self) -> None:
         """Stop both motors."""
