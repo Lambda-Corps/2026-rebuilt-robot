@@ -9,19 +9,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lambda-corps-2026"
-version = "0.1.0"
+version = "0.9.0"
 description = "Lambda Corps FRC 2026 Robot Code"
 
 [tool.setuptools]
-packages = ["commands", "subsystems", "apriltag_viewer", "apriltag_viewer.camera", "apriltag_viewer.detection", "apriltag_viewer.field", "apriltag_viewer.gui", "apriltag_viewer.utils"]
-
-[project.scripts]
-apriltag-viewer = "apriltag_viewer.main:main"
+packages = ["commands", "subsystems"]
 
 [tool.robotpy]
 
 # Version of robotpy this project depends on
-robotpy_version = "2026.2.1"
+robotpy_version = "2026.2.1.1"
 
 # Which extra RobotPy components should be installed
 # -> equivalent to `pip install robotpy[extra1, ...]
@@ -41,6 +38,15 @@ components = [
 # Other pip packages to install
 requires = [
     "phoenix6~=26.1",
-    "robotpy_pathplannerlib~=2026.1.1",
-    "photonlibpy>=2026.0.1b38"
+    "robotpy_pathplannerlib~=2026.1.2",
+    "photonlibpy>=2026.2.2"
+]
+
+# Exclude specific folders from deployment
+exclude = [
+    "tests",
+    "sim_data",
+    "*.log",
+    "*.pdf",
+    "*.zip"
 ]

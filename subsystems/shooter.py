@@ -2,19 +2,34 @@ from enum import Enum
 import wpilib
 from commands2 import Subsystem, Command, RunCommand
 from wpilib import SmartDashboard, RobotBase, RobotController, DutyCycleEncoder
+
+from utils.logger import (
+    log_debug,
+    log_smartdashboard_number,
+    log_smartdashboard_boolean,
+)
 from wpilib.simulation import FlywheelSim
 from wpimath.system.plant import DCMotor
 from phoenix6.configs import (
     TalonFXConfiguration,
     TalonFXConfigurator,
 )
-from phoenix6 import hardware, controls, signals
+from phoenix6 import hardware, controls, signals, utils
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.controls.follower import Follower
-from phoenix6.signals.spn_enums import InvertedValue, NeutralModeValue, ForwardLimitValue, ReverseLimitValue
+from phoenix6.signals.spn_enums import (
+    InvertedValue,
+    NeutralModeValue,
+    ForwardLimitValue,
+    ReverseLimitValue,
+)
 from phoenix6.unmanaged import feed_enable
 from phoenix6.configs import TalonFXConfiguration
-from phoenix6.signals.spn_enums import (InvertedValue, NeutralModeValue, FeedbackSensorSourceValue)
+from phoenix6.signals.spn_enums import (
+    InvertedValue,
+    NeutralModeValue,
+    FeedbackSensorSourceValue,
+)
 from phoenix6 import StatusCode
 from phoenix6.hardware.talon_fx import TalonFX
 from phoenix6.controls.follower import Follower
@@ -35,11 +50,11 @@ class Shooter(Subsystem):
         self.flywheel_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.indexer_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.counter = 0
-        
+
         self.motor_speed_global = 0.5  # Initial speed
 
     def __configure_indexer(self) -> TalonFX:
-        talon = TalonFX(21, "canivore1")
+        talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
@@ -47,60 +62,75 @@ class Shooter(Subsystem):
         return talon
 
     def __configure_flywheel(self) -> TalonFX:
-        talon = TalonFX(20, "canivore1")     # CAN Bus Address
+        talon = TalonFX(20, "" if utils.is_simulation() else "canivore1")     # CAN Bus Address
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         talon.configurator.apply(config)
         return talon
-    
 
-    def flywheel_spin(self, flywheel_spinspeed: float) -> None:
-        self.flywheel_duty_cycle_out.output = flywheel_spinspeed
+    def flywheel_spin(self) -> None:
+        self.flywheel_duty_cycle_out.output = self.motor_speed_global
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-        print("FLYWHEEL===================================================================")
-        # rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
-        # rotor_velocity.refresh()
-        # velocity_value = rotor_velocity.value
-        # print(f"velocity_value: {velocity_value:6.2f}")
+        print("Flywheel Spinning")
+        print(self.flywheel_duty_cycle_out.output)
+            
 
-
-    # def flywheel_spin_global_control(self) -> None:         
-    #     self.flywheel_enabled = True  # Speed not being controlled by parameter
-    #     if (self.flywheel_enabled):                                       # Global control of Flywheel
-    #         self.counter = self.counter  + 1
-
-    #         self.flywheel_duty_cycle_out.output = self.motor_speed_global           # Speed set by global variable
-    #         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-
-    #     else:
-    #         self.flywheel_duty_cycle_out.output = 0
-    #         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-
-    #     # Get the Velocity of the wheel in Rotations per second    
-    #     
-
+# DF:  3/3/26:  Adding periodic action from "ShooterSubsystem" into "Shooter"
+#  
 
     def periodic(self):
+        """Publish telemetry every cycle."""
+        SmartDashboard.putNumber("Shooter/ShooterDutyCycle", self._shooter_duty_cycle)
+        SmartDashboard.putNumber("Shooter/IndexerDutyCycle", self._indexer_duty_cycle)
+
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
         #print(f"Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
         wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", velocity_value)
+        wpilib.SmartDashboard.putNumber("Wanted Flywheel Velocity: ", self.motor_speed_global)
+        
 
-    def indexer_spin(self,indexer_spinspeed: float) -> None:
+    def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.indexer_duty_cycle_out.output = indexer_spinspeed
         self._shooter_indexer.set_control(self.indexer_duty_cycle_out)
-        wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
-
+        wpilib.SmartDashboard.putNumber("Indexer Speed: ", indexer_spinspeed)
 
     def change_speed_variable_function(self, speed_update : float) -> None:
         
         if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
             self.motor_speed_global = self.motor_speed_global + speed_update
-        
+            print("Speed Changed")
+            print(self.motor_speed_global)
+        elif self.motor_speed_global <= -1:
+            self.motor_speed_global = -0.95
+            print("Lower Limit")
+        elif self.motor_speed_global >= 1:
+            self.motor_speed_global = 0.95
+            print("Upper Limit")
 
-        #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
+    def is_shooter_spinning(self, thresholdPercent) -> bool :
+        rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
+        # rotor_velocity.refresh()
+        currentSpeed=-rotor_velocity.value
+        # return True
+        if currentSpeed > thresholdPercent*self.motor_speed_global:
+            return True 
+        else:return False
 
-    # def enable_flywheel(self, enable, flywheel_spinspeed):
-    #     self.flywheel_enabled  = enable
-    #     self.flywheel_spin(flywheel_spinspeed)
+# DF:  3/3/26:  Adding methods from "ShooterSubsystem" into "Shooter"
+#  
+    def set_shooter_speed(self, duty_cycle: float) -> None:
+        """Set shooter motor duty cycle (-1.0 to 1.0)."""
+        self._shooter_duty_cycle = duty_cycle
+        self._shooter_motor.set_control(self._shooter_request.with_output(duty_cycle))
+
+    def set_indexer_speed(self, duty_cycle: float) -> None:
+        """Set indexer motor duty cycle (-1.0 to 1.0)."""
+        self._indexer_duty_cycle = duty_cycle
+        self._indexer_motor.set_control(self._indexer_request.with_output(duty_cycle))
+
+    def stop(self) -> None:
+        """Stop both motors."""
+        self.set_shooter_speed(0.0)
+        self.set_indexer_speed(0.0)
