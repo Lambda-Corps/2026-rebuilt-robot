@@ -12,7 +12,7 @@ from commands2.sysid import SysIdRoutine
 from generated.tuner_constants import TunerConstants
 from telemetry import Telemetry
 
-from pathplannerlib.auto import AutoBuilder
+from pathplannerlib.auto import AutoBuilder, NamedCommands, PathPlannerAuto
 from phoenix6 import swerve
 from wpilib import DriverStation, RobotBase, SmartDashboard
 from wpimath.geometry import Rotation2d, Pose2d
@@ -32,6 +32,8 @@ from commands.indexerCommand import ControlIndexer
 from subsystems.shooter import Shooter # Older code, still used for indexer
 from commands.ShooterCommand import ShooterCommand # newer, used by auto-aim
 from commands.changeSpeedFlywheel import ChangeFlywheelSpeed
+from commands.flywheelCommand import ControlFlywheel   # Used by autonomous pathfinder.
+# TODO:  Need to update pathfinder to enable automatic vision tracking
 
 from subsystems.shooter_subsystem import ShooterSubsystem
 # DF: Added to quiet Console log
@@ -116,17 +118,24 @@ class RobotContainer:
         self._ledsubsystem = LEDSubsystem()
         self._intake =  Intake()
         self._shooter = Shooter() # Only used for indexer. Should be renamed. - MR
-        self._shooter_subsystem = ShooterSubsystem()
+        self._shooter_subsystem = ShooterSubsystem()  # DF Recommend disabling this line
+
+        #DF 3/3/2026:
+        # There are a number of methods in the old shooter subsystem used by Lucas's code
+        # Recommend we add the ShooterSubsystem unqiue methods to the old subsystem
+        #
 #
         # self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter_subsystem, self._intake))
         self._vision_subsystem = VisionSubsystem(self.drivetrain)
 
         # Path follower
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
-        SmartDashboard.putData("Auto Mode", self._auto_chooser)
+        # self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
+        # SmartDashboard.putData("Auto Mode", self._auto_chooser)
 
         # Set up default commands
         self.setDefaultCommands()
+        self.configureButtonBindings()
+        self.configure_path_planner()
 
     def setDefaultCommands(self) -> None:
         """Set up default commands for subsystems. Called from __init__."""
@@ -210,9 +219,11 @@ class RobotContainer:
         )
 
         # Driver controller bindings
-        self._driver_controller.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
-        self._driver_controller.a().whileFalse(LEDCommand(self._ledsubsystem, 0))
-        self._driver_controller.a().whileTrue(LEDCommand(self._ledsubsystem, 135))
+        #  DF:  The set brake and LED commands are not used:
+
+        # self._driver_controller.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
+        # self._driver_controller.a().whileFalse(LEDCommand(self._ledsubsystem, 0))
+        # self._driver_controller.a().whileTrue(LEDCommand(self._ledsubsystem, 135))
         self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, 0.65, False))
         self._driver_controller.rightTrigger().whileTrue(ControlIntake(self._intake, 0, False))
         self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
@@ -234,6 +245,7 @@ class RobotContainer:
         self._partner_controller.a().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -0.6))
         self._partner_controller.b().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0))
         # DF:  not sure the above triggers will work since its expecting a command as a parameter
+        #      Likely cause a runtime error
         
         self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
         self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
@@ -390,3 +402,19 @@ class RobotContainer:
         :returns: the command to run in autonomous
         """
         return self._auto_chooser.getSelected()
+
+
+    def configure_path_planner(self):
+
+        # Named commands must be created before Autos can be defined
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -0.6))
+        NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, 0.6))
+        NamedCommands.registerCommand("startflywheelStop", ControlIndexer(self._shooter, 0.0))
+        NamedCommands.registerCommand("run_Intake",ControlIntake(self._intake, 0.65, False))
+        
+        # Path follower
+        self._auto_chooser = AutoBuilder.buildAutoChooser("midfieldshoot")  # Parameter is default Path
+        self._auto_chooser.addOption("midfieldshoot", PathPlannerAuto("midfieldshoot"))
+        self._auto_chooser.addOption("outpost auto blue", PathPlannerAuto("outpost auto blue"))
+        self._auto_chooser.addOption("get+shoot+get fuel+climb", PathPlannerAuto("get+shoot+get fuel+climb"))
+        SmartDashboard.putData("Auto Mode", self._auto_chooser)
