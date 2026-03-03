@@ -80,8 +80,9 @@ class Shooter(Subsystem):
 
     def periodic(self):
         """Publish telemetry every cycle."""
-        SmartDashboard.putNumber("Shooter/ShooterDutyCycle", self._shooter_duty_cycle)
-        SmartDashboard.putNumber("Shooter/IndexerDutyCycle", self._indexer_duty_cycle)
+        # SmartDashboard.putNumber("Shooter/ShooterDutyCycle", self._shooter_duty_cycle)
+        SmartDashboard.putNumber("Shooter/ShooterDutyCycle", self.motor_speed_global)
+        # SmartDashboard.putNumber("Shooter/IndexerDutyCycle", self._indexer_duty_cycle)
 
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()

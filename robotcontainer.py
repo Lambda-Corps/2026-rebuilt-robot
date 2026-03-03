@@ -34,6 +34,7 @@ from commands.ShooterCommand import ShooterCommand # newer, used by auto-aim
 from commands.changeSpeedFlywheel import ChangeFlywheelSpeed
 from commands.flywheelCommand import ControlFlywheel   # Used by autonomous pathfinder.
 # TODO:  Need to update pathfinder to enable automatic vision tracking
+from commands.flywheelStopCommand import StopFlywheel
 
 from subsystems.shooter_subsystem import ShooterSubsystem
 # DF: Added to quiet Console log
@@ -221,6 +222,9 @@ class RobotContainer:
         # Driver controller bindings
         #  DF:  The set brake and LED commands are not used:
 
+        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
+        self._driver_controller.b().onTrue(StopFlywheel(self._shooter))
+
         # self._driver_controller.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
         # self._driver_controller.a().whileFalse(LEDCommand(self._ledsubsystem, 0))
         # self._driver_controller.a().whileTrue(LEDCommand(self._ledsubsystem, 135))
@@ -242,11 +246,16 @@ class RobotContainer:
         self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
         
 
-        self._partner_controller.a().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -0.6))
-        self._partner_controller.b().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0))
+        # self._partner_controller.a().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -0.6))
+        # self._partner_controller.b().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0))
         # DF:  not sure the above triggers will work since its expecting a command as a parameter
         #      Likely cause a runtime error
+        #  VERIFFIED THIS CAUSES CRASH
         
+        self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
+        self._partner_controller.b().onTrue(StopFlywheel(self._shooter))
+
+
         self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
         self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
         

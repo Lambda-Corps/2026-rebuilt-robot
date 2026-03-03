@@ -1,0 +1,67 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "startflywheelStart"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "run_Intake"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "back up"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runindexer"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "startflywheelStop"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "move south"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "move to middle test"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
