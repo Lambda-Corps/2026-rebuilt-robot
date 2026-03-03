@@ -37,7 +37,7 @@ from phoenix6.signals.spn_enums import InvertedValue, NeutralModeValue
 from phoenix6.controls import DutyCycleOut, VelocityVoltage
 from phoenix6.unmanaged import feed_enable
 from phoenix6.signal_logger import SignalLogger
-
+from wpilib import PowerDistribution
 
 class Shooter(Subsystem):
     def __init__(self):
@@ -52,7 +52,9 @@ class Shooter(Subsystem):
         self.counter = 0
 
         self.motor_speed_global = -0.5  # Initial speed
-
+        # //// Initialize PDH (assuming default CAN ID 1)
+        self.powerhub = PowerDistribution(1)
+ 
     def __configure_indexer(self) -> TalonFX:
         talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
@@ -135,3 +137,7 @@ class Shooter(Subsystem):
         """Stop both motors."""
         self.set_shooter_speed(0.0)
         self.set_indexer_speed(0.0)
+
+    def clearpowerhubstickyfaults(self) -> None: 
+        self.powerhub.clearStickyFaults()
+ 
