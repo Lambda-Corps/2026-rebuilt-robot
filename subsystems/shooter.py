@@ -75,13 +75,21 @@ class Shooter(Subsystem):
         print(self.flywheel_duty_cycle_out.output)
             
 
+# DF:  3/3/26:  Adding periodic action from "ShooterSubsystem" into "Shooter"
+#  
+
     def periodic(self):
+        """Publish telemetry every cycle."""
+        SmartDashboard.putNumber("Shooter/ShooterDutyCycle", self._shooter_duty_cycle)
+        SmartDashboard.putNumber("Shooter/IndexerDutyCycle", self._indexer_duty_cycle)
+
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
         #print(f"Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
         wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", velocity_value)
         wpilib.SmartDashboard.putNumber("Wanted Flywheel Velocity: ", self.motor_speed_global)
+        
 
     def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.indexer_duty_cycle_out.output = indexer_spinspeed
@@ -109,3 +117,20 @@ class Shooter(Subsystem):
         if currentSpeed > thresholdPercent*self.motor_speed_global:
             return True 
         else:return False
+
+# DF:  3/3/26:  Adding methods from "ShooterSubsystem" into "Shooter"
+#  
+    def set_shooter_speed(self, duty_cycle: float) -> None:
+        """Set shooter motor duty cycle (-1.0 to 1.0)."""
+        self._shooter_duty_cycle = duty_cycle
+        self._shooter_motor.set_control(self._shooter_request.with_output(duty_cycle))
+
+    def set_indexer_speed(self, duty_cycle: float) -> None:
+        """Set indexer motor duty cycle (-1.0 to 1.0)."""
+        self._indexer_duty_cycle = duty_cycle
+        self._indexer_motor.set_control(self._indexer_request.with_output(duty_cycle))
+
+    def stop(self) -> None:
+        """Stop both motors."""
+        self.set_shooter_speed(0.0)
+        self.set_indexer_speed(0.0)

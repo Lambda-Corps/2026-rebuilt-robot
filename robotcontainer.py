@@ -233,6 +233,7 @@ class RobotContainer:
 
         self._partner_controller.a().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -0.6))
         self._partner_controller.b().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0))
+        # DF:  not sure the above triggers will work since its expecting a command as a parameter
         
         self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
         self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
