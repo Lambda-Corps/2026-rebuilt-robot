@@ -183,3 +183,18 @@ cython_debug/
 
 # Mac filesystem artifacts
 .DS_Store
+
+# PDFs
+*.pdf
+
+# WPILibSimulation local preferences
+simgui.json
+simgui-ds.json
+simgui-window.json
+
+# TEMP IGNORE
+# Agent-specific
+apriltag_viewer/
+field_assets/
+AGENTS.md
+CLAUDE.md

@@ -9,7 +9,7 @@ class LEDSubsystem(Subsystem):
    def __init__(self) -> None:
        super().__init__()      # Call the initialization routing of the parent Object
 
-       self.kLEDBuffer = 40      # Number of LEDs
+       self.kLEDBuffer = 5      # Number of LEDs
 
        # Instantiate the LED Object on RoboRIO PWM Pin 9
        self.LED = wpilib.AddressableLED(9)
@@ -26,7 +26,7 @@ class LEDSubsystem(Subsystem):
        # Push the array of LED color information into the physical LED strip
        self.LED.setData(self.ledData)
        self.LED.start()
-       #print (">>>> Robot Initialization complete in __init__ in LEDSubsystem.py")
+       print (">>>> Robot Initialization complete in __init__ in LEDSubsystem.py")
 
 
    def joystickControlsColor(self, xInput, yInput):
@@ -68,15 +68,3 @@ class LEDSubsystem(Subsystem):
        for i in range(self.kLEDBuffer):
            self.ledData[i].setHSV(int(hue), 255, 128)
        self.LED.setData(self.ledData)
-
-   def blue(self):
-       for i in range(self.kLEDBuffer):
-           hue = 230  # blue
-           self.ledData[i].setHSV(int(hue), 255, 128)
-       self.LED.setData(self.ledData) 
-
-   def purple(self):
-       for i in range(self.kLEDBuffer):
-           hue = 285  # purple
-           self.ledData[i].setHSV(int(hue), 255, 128)
-       self.LED.setData(self.ledData)      

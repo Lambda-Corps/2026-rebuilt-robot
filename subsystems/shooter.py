@@ -75,28 +75,6 @@ class Shooter(Subsystem):
         print(self.flywheel_duty_cycle_out.output)
             
 
-        # rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
-        # rotor_velocity.refresh()
-        # velocity_value = rotor_velocity.value
-        # print(f"velocity_value: {velocity_value:6.2f}")
-
-
-    # def flywheel_spin_global_control(self) -> None:         
-    #     self.flywheel_enabled = True  # Speed not being controlled by parameter
-    #     if (self.flywheel_enabled):                                       # Global control of Flywheel
-    #         self.counter = self.counter  + 1
-
-    #         self.flywheel_duty_cycle_out.output = self.motor_speed_global           # Speed set by global variable
-    #         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-
-    #     else:
-    #         self.flywheel_duty_cycle_out.output = 0
-    #         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-
-    #     # Get the Velocity of the wheel in Rotations per second    
-    #     
-
-
     def periodic(self):
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
@@ -104,31 +82,6 @@ class Shooter(Subsystem):
         #print(f"Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
         wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", velocity_value)
         wpilib.SmartDashboard.putNumber("Wanted Flywheel Velocity: ", self.motor_speed_global)
-
-    # def indexer_spin(self,indexer_spinspeed: float) -> None:
-    #     # Get the Velocity of the wheel in Rotations per second
-    #     rotor_velocity = (
-    #         self._shooter_flywheel.get_rotor_velocity()
-    #     )  # Get the flywheel speed
-    #     rotor_velocity.refresh()
-    #     velocity_value = rotor_velocity.value
-    #     # print(f"Counter: {self.counter}     Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
-
-    #     log_smartdashboard_number(
-    #         "FlyWheel Speed: ",
-    #         self.motor_speed_global,
-    #         min_verbosity=10,
-    #         update_frequency=10,
-    #     )
-    #     log_smartdashboard_number(
-    #         "FlyWheel Velocity: ", velocity_value, min_verbosity=10, update_frequency=10
-    #     )
-    #     log_smartdashboard_boolean(
-    #         "Flywheel Enable: ",
-    #         self.flywheel_enabled,
-    #         min_verbosity=10,
-    #         update_frequency=10,
-    #     )
 
     def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.indexer_duty_cycle_out.output = indexer_spinspeed
@@ -147,13 +100,6 @@ class Shooter(Subsystem):
         elif self.motor_speed_global >= 1:
             self.motor_speed_global = 0.95
             print("Upper Limit")
-        
-
-        #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
-
-    # def enable_flywheel(self, enable, flywheel_spinspeed):
-    #     self.flywheel_enabled  = enable
-    #     self.flywheel_spin(flywheel_spinspeed)
 
     def is_shooter_spinning(self, thresholdPercent) -> bool :
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()

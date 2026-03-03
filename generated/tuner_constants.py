@@ -70,8 +70,8 @@ class TunerConstants:
 
     # CAN bus that the devices are located on;
     # All swerve devices must share the same CAN bus
-    canbus = CANBus("canivore1", "./logs/example.hoot")
-    # canrio = CANBus("")
+    _canbus_name = "canivore1"
+    _canbus_hoot_path = "./logs/example.hoot"
 
     # Theoretical free speed (m/s) at 12 V applied output;
     # This needs to be tuned to your individual robot
@@ -99,7 +99,7 @@ class TunerConstants:
 
     drivetrain_constants = (
         swerve.SwerveDrivetrainConstants()
-        .with_can_bus_name(canbus.name)
+        .with_can_bus_name(_canbus_name)
         .with_pigeon2_id(_pigeon_id)
         .with_pigeon2_configs(_pigeon_configs)
     )
@@ -225,6 +225,10 @@ class TunerConstants:
         Creates a CommandSwerveDrivetrain instance.
         This should only be called once in your robot program.
         """
+        # Create CANBus here (after HAL init) rather than at class-level import time,
+        # so Phoenix6 can detect the real CANivore hardware
+        cls.canbus = CANBus(cls._canbus_name, cls._canbus_hoot_path)
+
         return CommandSwerveDrivetrain(
             hardware.TalonFX,
             hardware.TalonFX,

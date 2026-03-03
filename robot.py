@@ -6,7 +6,7 @@
 #
 
 # March 19, 2025
-#   WHEN YOU GET AN FATAL ERROR RUN: 
+#   WHEN YOU GET AN FATAL ERROR RUN:
 #   py -3 -m robotpy installer niweb disable
 
 import wpilib
@@ -23,6 +23,12 @@ class MyRobot(commands2.TimedCommandRobot):
     """
 
     autonomousCommand: typing.Optional[commands2.Command] = None
+
+    def __init__(self):
+        # Use a longer period in simulation so the watchdog tolerates
+        # VisionSystemSim raycasting (~30-40ms in Python).
+        period = 0.06 if wpilib.RobotBase.isSimulation() else 0.05
+        super().__init__(period)
 
     def robotInit(self) -> None:
         """
@@ -57,6 +63,9 @@ class MyRobot(commands2.TimedCommandRobot):
 
     def autonomousInit(self) -> None:
         """This autonomous runs the autonomous command selected by your RobotContainer class."""
+        # Initialize robot pose based on starting position and alliance
+        self.container._initialize_robot_pose()
+
         self.autonomousCommand = self.container.getAutonomousCommand()
 
         if self.autonomousCommand:
@@ -74,6 +83,9 @@ class MyRobot(commands2.TimedCommandRobot):
         if self.autonomousCommand:
             self.autonomousCommand.cancel()
 
+        # Set up button bindings now that joystick should be ready
+        self.container.configureButtonBindings()
+
     def teleopPeriodic(self) -> None:
         """This function is called periodically during operator control"""
         pass
@@ -81,5 +93,3 @@ class MyRobot(commands2.TimedCommandRobot):
     def testInit(self) -> None:
         # Cancels all running commands at the start of test mode
         commands2.CommandScheduler.getInstance().cancelAll()
-
-   
