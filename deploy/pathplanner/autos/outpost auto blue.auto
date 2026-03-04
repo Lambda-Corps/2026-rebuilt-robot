@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Part_1"
+            "pathName": "start to outpost"
           }
         },
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "Part_2"
+            "name": "startflywheelStart"
           }
         },
         {
@@ -25,7 +25,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Part_3"
+            "pathName": "move to shoot"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "start to move to middle"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "move to middle"
           }
         }
       ]

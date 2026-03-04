@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.0,
-        "y": 7.0
+        "x": 2.0285892853139615,
+        "y": 2.6
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.0,
-        "y": 7.0
+        "x": 3.0285892853139615,
+        "y": 2.5999999999999996
       },
       "isLocked": false,
-      "linkedName": "Start_part_1"
+      "linkedName": "move south end"
     },
     {
       "anchor": {
-        "x": 5.0,
-        "y": 7.0
+        "x": 3.6303461538461548,
+        "y": 2.6
       },
       "prevControl": {
-        "x": 4.0,
-        "y": 7.0
+        "x": 2.6303461538461548,
+        "y": 2.6
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "End_Part_1"
+      "linkedName": null
     }
   ],
   "rotationTargets": [],
