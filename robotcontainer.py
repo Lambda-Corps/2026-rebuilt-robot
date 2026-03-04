@@ -18,6 +18,26 @@ from wpilib import DriverStation, RobotBase, SmartDashboard
 from wpimath.geometry import Rotation2d, Pose2d
 from wpimath.units import rotationsToRadians
 
+from constants import (
+    DEAD_ZONE,
+    DEFAULT_DEADZONE,
+    DEFAULT_EXPONENT,
+    EXP_SCALING,
+    FLYWHEEL_SPEED_INCREMENT,
+    INDEXER_SPEED,
+    INTAKE_SPEED,
+    MAX_ANGULAR_VELOCITY_ROTATIONS,
+    MOVE_SPEED_REDUCTION,
+    ROTATE_DEAD_ZONE,
+    ROTATE_SPEED_REDUCTION,
+    ROTATIONAL_DEADBAND_FACTOR,
+    SHOOTER_SPEED,
+    VISION_DEAD_ZONE,
+    VISION_EXP_SCALING,
+    VISION_MOVE_SPEED_REDUCTION,
+    VISION_ROTATE_DEAD_ZONE,
+    VISION_ROTATE_SPEED_REDUCTION,
+)
 from subsystems.ledsubsystem import LEDSubsystem
 from commands.ledcommand import LEDCommand
 from commands.LEDrainbow import LEDrainbow
@@ -29,14 +49,16 @@ from subsystems.intake import Intake
 from commands.intakeCommand import ControlIntake
 
 from commands.indexerCommand import ControlIndexer
-from subsystems.shooter import Shooter # Older code, still used for indexer
-from commands.ShooterCommand import ShooterCommand # newer, used by auto-aim
+from subsystems.shooter import Shooter  # Older code, still used for indexer
+from commands.ShooterCommand import ShooterCommand  # newer, used by auto-aim
 from commands.changeSpeedFlywheel import ChangeFlywheelSpeed
 
 from subsystems.shooter_subsystem import ShooterSubsystem
+
 # DF: Added to quiet Console log
 import wpilib
 from wpilib import LiveWindow
+
 
 class RobotContainer:
     """
@@ -47,28 +69,24 @@ class RobotContainer:
     """
 
     def __init__(self) -> None:
-
-        #================================================================
+        # ================================================================
         # DF: Added to quiet Console log
 
         wpilib.DriverStation.silenceJoystickConnectionWarning(True)
 
-        # The function FRC LiveWindow.disableAllTelemetry() is a static method 
+        # The function FRC LiveWindow.disableAllTelemetry() is a static method
         # in the FRC (FIRST Robotics Competition) WPILib library that disables t
-        # he sending of data for all sensors and actuators to the SmartDashboard 
-        # or Shuffleboard LiveWindow display.  
+        # he sending of data for all sensors and actuators to the SmartDashboard
+        # or Shuffleboard LiveWindow display.
 
         LiveWindow.disableAllTelemetry()
-        
-        # https://robotpy.readthedocs.io/projects/robotpy/en/latest/wpilib/LiveWindow.html 
 
-        
+        # https://robotpy.readthedocs.io/projects/robotpy/en/latest/wpilib/LiveWindow.html
+
         self._max_speed = (
             TunerConstants.speed_at_12_volts
         )  # speed_at_12_volts desired top speed
-        self._max_angular_rate = rotationsToRadians(
-            1.4
-        )  # 3/4 of a rotation per second max angular velocity
+        self._max_angular_rate = rotationsToRadians(MAX_ANGULAR_VELOCITY_ROTATIONS)
 
         # Track whether we're in field-centric mode
         self._is_field_centric = False
@@ -78,8 +96,8 @@ class RobotContainer:
         self._drive_robot_centric = (
             swerve.requests.RobotCentric()
             .with_rotational_deadband(
-                self._max_angular_rate * 0.075
-            )  # Add a 10% deadband
+                self._max_angular_rate * ROTATIONAL_DEADBAND_FACTOR
+            )
             .with_drive_request_type(
                 swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
             )  # Use open-loop control for drive motors
@@ -87,8 +105,8 @@ class RobotContainer:
         self._drive_field_centric = (
             swerve.requests.FieldCentric()
             .with_rotational_deadband(
-                self._max_angular_rate * 0.075
-            )  # Add a 10% deadband
+                self._max_angular_rate * ROTATIONAL_DEADBAND_FACTOR
+            )
             .with_drive_request_type(
                 swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
             )  # Use open-loop control for drive motors
@@ -114,10 +132,10 @@ class RobotContainer:
         self.drivetrain = TunerConstants.create_drivetrain()
 
         self._ledsubsystem = LEDSubsystem()
-        self._intake =  Intake()
-        self._shooter = Shooter() # Only used for indexer. Should be renamed. - MR
+        self._intake = Intake()
+        self._shooter = Shooter()  # Only used for indexer. Should be renamed. - MR
         self._shooter_subsystem = ShooterSubsystem()
-#
+        #
         # self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter_subsystem, self._intake))
         self._vision_subsystem = VisionSubsystem(self.drivetrain)
 
@@ -132,16 +150,6 @@ class RobotContainer:
         """Set up default commands for subsystems. Called from __init__."""
         # Always set up default command first (so robot appears in Field2d)
 
-        move_speed_reduction = (
-            0.5  #### Added to reduce speed while learning about swerve
-        )
-        rotate_speed_reduction = (
-            1.0  ###  NOTE THAT updating _max_speed did not seem to affect speed
-        )
-        dead_zone = 0.04
-        rotate_dead_zone = 0.04  # Higher deadzone for rotation to prevent constant spin
-        exp_scaling = 1.65
-
         joystick = self._driver_controller
 
         def get_drive_request():
@@ -152,9 +160,9 @@ class RobotContainer:
                 rot_axis = joystick._hid.getRawAxis(4)
 
             rot_rate = (
-                -self.apply_deadzone_and_curve(rot_axis, rotate_dead_zone, exp_scaling)
+                -self.apply_deadzone_and_curve(rot_axis, ROTATE_DEAD_ZONE, EXP_SCALING)
                 * self._max_angular_rate
-                * rotate_speed_reduction
+                * ROTATE_SPEED_REDUCTION
             )
 
             return (
@@ -165,17 +173,17 @@ class RobotContainer:
                 )
                 .with_velocity_x(
                     -self.apply_deadzone_and_curve(
-                        joystick.getLeftY(), dead_zone, exp_scaling
+                        joystick.getLeftY(), DEAD_ZONE, EXP_SCALING
                     )
                     * self._max_speed
-                    * move_speed_reduction
+                    * MOVE_SPEED_REDUCTION
                 )
                 .with_velocity_y(
                     -self.apply_deadzone_and_curve(
-                        joystick.getLeftX(), dead_zone, exp_scaling
+                        joystick.getLeftX(), DEAD_ZONE, EXP_SCALING
                     )
                     * self._max_speed
-                    * move_speed_reduction
+                    * MOVE_SPEED_REDUCTION
                 )
                 .with_rotational_rate(rot_rate)
             )
@@ -198,9 +206,9 @@ class RobotContainer:
         print("[RobotContainer] Setting up button bindings...")
 
         # Speed settings for translation
-        move_speed_reduction = 0.8
-        dead_zone = 0.055
-        exp_scaling = 1.4
+        move_speed_reduction = VISION_MOVE_SPEED_REDUCTION
+        dead_zone = VISION_DEAD_ZONE
+        exp_scaling = VISION_EXP_SCALING
 
         # Idle while the robot is disabled. This ensures the configured
         # neutral mode is applied to the drive motors while disabled.
@@ -210,11 +218,17 @@ class RobotContainer:
         )
 
         # Driver controller bindings
-        self._driver_controller.a().whileTrue(self.drivetrain.apply_request(lambda: self._brake))
+        self._driver_controller.a().whileTrue(
+            self.drivetrain.apply_request(lambda: self._brake)
+        )
         self._driver_controller.a().whileFalse(LEDCommand(self._ledsubsystem, 0))
         self._driver_controller.a().whileTrue(LEDCommand(self._ledsubsystem, 135))
-        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, 0.65, False))
-        self._driver_controller.rightTrigger().whileTrue(ControlIntake(self._intake, 0, False))
+        self._driver_controller.leftTrigger().whileTrue(
+            ControlIntake(self._intake, INTAKE_SPEED, False)
+        )
+        self._driver_controller.rightTrigger().whileTrue(
+            ControlIntake(self._intake, 0, False)
+        )
         self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
         # Unsure what this was for so leaving it commented out for now - MR
@@ -227,19 +241,34 @@ class RobotContainer:
         # )
 
         # Partner contoller bindings
-        self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
-        self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
-        
+        self._partner_controller.leftBumper().whileTrue(
+            ControlIndexer(self._shooter, INDEXER_SPEED)
+        )
+        self._partner_controller.rightBumper().whileTrue(
+            ControlIndexer(self._shooter, 0)
+        )
 
-        self._partner_controller.a().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -0.6))
-        self._partner_controller.b().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0))
-        
-        self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
-        self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
-        
+        self._partner_controller.a().onTrue(
+            ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -SHOOTER_SPEED)
+        )
+        self._partner_controller.b().onTrue(
+            ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0)
+        )
+
+        self._partner_controller.x().onTrue(
+            ControlIntake(self._intake, INTAKE_SPEED, False)
+        )
+        self._partner_controller.y().onTrue(
+            ControlIntake(self._intake, INTAKE_SPEED, True)
+        )
+
         # During auto-aim, speed will be controled based on distance to target
-        self._partner_controller.povUp().onTrue(ChangeFlywheelSpeed(self._shooter, 0.05))        
-        self._partner_controller.povDown().onTrue(ChangeFlywheelSpeed(self._shooter, -0.05))
+        self._partner_controller.povUp().onTrue(
+            ChangeFlywheelSpeed(self._shooter, FLYWHEEL_SPEED_INCREMENT)
+        )
+        self._partner_controller.povDown().onTrue(
+            ChangeFlywheelSpeed(self._shooter, -FLYWHEEL_SPEED_INCREMENT)
+        )
 
         # No longer needed I think so commenting, but leaving for now - MR
         # # Run SysId routines when holding back/start and X/Y.
@@ -287,8 +316,8 @@ class RobotContainer:
                 return self._drive_field_centric
             return self._drive_robot_centric
 
-        rotate_dead_zone = 0.04
-        rotate_speed_reduction = 1.0
+        rotate_dead_zone = VISION_ROTATE_DEAD_ZONE
+        rotate_speed_reduction = VISION_ROTATE_SPEED_REDUCTION
 
         joystick = self._driver_controller
 
@@ -371,7 +400,9 @@ class RobotContainer:
 
     @staticmethod
     def apply_deadzone_and_curve(
-        axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
+        axis_value: float,
+        deadzone: float = DEFAULT_DEADZONE,
+        exponent: float = DEFAULT_EXPONENT,
     ) -> float:
         if abs(axis_value) < deadzone:
             return 0.0

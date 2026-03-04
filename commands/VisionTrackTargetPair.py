@@ -106,6 +106,8 @@ class VisionTrackTargetPair(Command):
         self._consecutive_loops_in_tolerance = 0
         self._is_active: bool = False
         self._last_target_offset: Optional[tuple[float, float]] = None
+        self._lock_lost_time: Optional[float] = None  # When locked pair was first lost
+        self._prev_visible_pairs: set[tuple[int, int]] = set()  # Pairs visible in previous frame
 
         # Require both subsystems
         self.addRequirements(drivetrain, vision_subsystem)
@@ -119,6 +121,8 @@ class VisionTrackTargetPair(Command):
         self._consecutive_loops_in_tolerance = 0
         self._is_active = False
         self._last_target_offset = None
+        self._lock_lost_time = None
+        self._prev_visible_pairs = set()
 
         # Clear smoothing buffer
         self._target_rotation_buffer.clear()
@@ -283,35 +287,64 @@ class VisionTrackTargetPair(Command):
         """
         visible_ids = set(self._vision.get_visible_tag_ids())
 
+        # Determine which alliance pairs are currently fully visible
+        currently_visible_pairs = set(
+            pair for pair in target_pairs
+            if pair[0] in visible_ids and pair[1] in visible_ids
+        )
+
+        # Detect genuinely NEW pairs (visible now but not in previous frame)
+        new_pairs = currently_visible_pairs - self._prev_visible_pairs
+        self._prev_visible_pairs = currently_visible_pairs
+
+        # If a new pair appeared and we're locked to a different pair,
+        # switch to the new pair as the anchor
+        if new_pairs and self._locked_pair is not None and self._locked_pair not in new_pairs:
+            best_new = min(new_pairs, key=lambda p: min(p))
+            self._target_rotation_buffer.clear()
+            self._locked_pair = best_new
+            self._lock_lost_time = None
+
         # Check if our locked pair is still visible
+        matching_pairs = []
         if self._locked_pair is not None:
             pair_visible = (
                 self._locked_pair[0] in visible_ids
                 and self._locked_pair[1] in visible_ids
             )
             if pair_visible:
-                # Keep using locked pair
+                # Locked pair is visible -- keep using it, reset lost timer
+                self._lock_lost_time = None
                 matching_pairs = [self._locked_pair]
             else:
-                # Locked pair no longer visible, clear it
-                self._locked_pair = None
-                matching_pairs = []
-        else:
-            matching_pairs = []
+                # Locked pair not visible -- enter/continue grace period
+                if self._lock_lost_time is None:
+                    self._lock_lost_time = current_time
 
-        # If no locked pair, find new matching pairs
+                grace_elapsed = current_time - self._lock_lost_time
+
+                if grace_elapsed < TRACK_TARGET_PERSISTENCE_TIMEOUT:
+                    # Within grace period: keep the lock, use persisted heading
+                    matching_pairs = []
+                else:
+                    # Grace period expired: release the lock, search for new pairs
+                    self._locked_pair = None
+                    self._lock_lost_time = None
+                    matching_pairs = []
+
+        # If no locked pair (never had one, or grace expired), find new pairs
         if self._locked_pair is None:
-            matching_pairs = [
-                pair
-                for pair in target_pairs
-                if pair[0] in visible_ids and pair[1] in visible_ids
-            ]
+            matching_pairs = list(currently_visible_pairs)
 
         if matching_pairs:
             # If we don't have a locked pair, select one and lock onto it
             if self._locked_pair is None:
-                # Find best pair (lowest ID priority)
                 best_pair = min(matching_pairs, key=lambda p: min(p))
+
+                # Clear buffer when switching to a different pair
+                if self._target_pair is not None and best_pair != self._target_pair:
+                    self._target_rotation_buffer.clear()
+
                 self._locked_pair = best_pair
             else:
                 best_pair = self._locked_pair
@@ -341,22 +374,13 @@ class VisionTrackTargetPair(Command):
                 SmartDashboard.putNumber("VisionTrack/OffsetX", offset_x)
                 SmartDashboard.putNumber("VisionTrack/OffsetY", offset_y)
 
-        # Check if we should maintain last target during brief flicker
-        time_since_valid = current_time - self._last_valid_target_time
-        has_persistence = (
-            self._target_pair is not None
-            and time_since_valid < TRACK_TARGET_PERSISTENCE_TIMEOUT
-            and len(self._target_rotation_buffer) > 0
-        )
-
-        if not matching_pairs and not has_persistence:
-            # No target and no persistence - clear everything
+        # If no matching pairs and no active lock, clear everything
+        if not matching_pairs and self._locked_pair is None:
             self._target_pair = None
-            self._locked_pair = None  # Also clear locked pair
             self._target_rotation_buffer.clear()
             return None
 
-        # Calculate smoothed rotation from buffer (circular average to handle ±180° wrapping)
+        # Calculate smoothed rotation from buffer (circular average to handle +/-180 wrapping)
         if len(self._target_rotation_buffer) > 0:
             avg_sin = sum(math.sin(math.radians(r)) for r in self._target_rotation_buffer) / len(self._target_rotation_buffer)
             avg_cos = sum(math.cos(math.radians(r)) for r in self._target_rotation_buffer) / len(self._target_rotation_buffer)

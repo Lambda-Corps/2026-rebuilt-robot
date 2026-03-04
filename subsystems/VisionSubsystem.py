@@ -122,6 +122,11 @@ class VisionSubsystem(Subsystem):
         self._sim_update_interval = 3
         self._sim_cycle_count = 0
 
+        # Cached camera result for frame consistency.
+        # periodic() populates this once per cycle; helper methods read from it
+        # so that pose estimation and target tracking see the same frame.
+        self._cached_result = None
+
         # Simulation setup (only initialized in simulation mode)
         self._vision_sim: Optional[VisionSystemSim] = None
         self._camera_sim: Optional[PhotonCameraSim] = None
@@ -274,6 +279,7 @@ class VisionSubsystem(Subsystem):
         publish = self._should_publish()
 
         result = self._safe_get_latest_result()
+        self._cached_result = result  # Cache for helper methods within this cycle
 
         if result is None:
             self._provider_pub.set("ODO")
@@ -552,29 +558,33 @@ class VisionSubsystem(Subsystem):
         """
         Check if the camera currently sees any AprilTags.
 
+        Uses the cached result from the current periodic() cycle for
+        frame consistency with pose estimation.
+
         Returns:
             True if any targets are visible, False otherwise
         """
-        result = self._safe_get_latest_result()
-        if result is None:
+        if self._cached_result is None:
             return False
-        return result.hasTargets()
+        return self._cached_result.hasTargets()
 
     def get_best_target_id(self) -> Optional[int]:
         """
         Get the ID of the best (closest/most confident) target.
 
+        Uses the cached result from the current periodic() cycle for
+        frame consistency with pose estimation.
+
         Returns:
             The AprilTag ID of the best target, or None if no targets visible
         """
-        result = self._safe_get_latest_result()
-        if result is None:
+        if self._cached_result is None:
             return None
 
-        if not result.hasTargets():
+        if not self._cached_result.hasTargets():
             return None
 
-        best_target = result.getBestTarget()
+        best_target = self._cached_result.getBestTarget()
         if best_target is None:
             return None
 
@@ -584,15 +594,17 @@ class VisionSubsystem(Subsystem):
         """
         Get fiducial IDs for all currently visible AprilTags.
 
+        Uses the cached result from the current periodic() cycle for
+        frame consistency with pose estimation.
+
         Returns:
             List of AprilTag IDs currently detected by the camera
         """
-        result = self._safe_get_latest_result()
-        if result is None:
+        if self._cached_result is None:
             return []
-        if not result.hasTargets():
+        if not self._cached_result.hasTargets():
             return []
-        return [target.getFiducialId() for target in result.getTargets()]
+        return [target.getFiducialId() for target in self._cached_result.getTargets()]
 
     def get_time_since_last_valid_update(self) -> float:
         """

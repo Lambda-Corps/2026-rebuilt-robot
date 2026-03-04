@@ -1,0 +1,29 @@
+"""Shared constants for robot configuration."""
+
+# Drive control constants
+MOVE_SPEED_REDUCTION = 0.5
+ROTATE_SPEED_REDUCTION = 1.0
+DEAD_ZONE = 0.04
+ROTATE_DEAD_ZONE = 0.04
+EXP_SCALING = 1.65
+
+# Angular velocity and deadband
+MAX_ANGULAR_VELOCITY_ROTATIONS = 1.2
+ROTATIONAL_DEADBAND_FACTOR = 0.075
+
+# Vision tracking mode settings
+VISION_MOVE_SPEED_REDUCTION = 0.8
+VISION_DEAD_ZONE = 0.055
+VISION_EXP_SCALING = 1.4
+VISION_ROTATE_DEAD_ZONE = 0.04
+VISION_ROTATE_SPEED_REDUCTION = 1.0
+
+# Motor/Intake/Shooter speeds
+INTAKE_SPEED = 0.65
+INDEXER_SPEED = 0.6
+SHOOTER_SPEED = 0.6
+FLYWHEEL_SPEED_INCREMENT = 0.05
+
+# Default deadzone and curve parameters
+DEFAULT_DEADZONE = 0.1
+DEFAULT_EXPONENT = 2.0
