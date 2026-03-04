@@ -27,25 +27,27 @@ from phoenix6.configs import TalonFXConfiguration
 from phoenix6.signals.spn_enums import (InvertedValue, NeutralModeValue, FeedbackSensorSourceValue)
 from phoenix6 import StatusCode
 from wpilib import SmartDashboard, AnalogInput, RobotBase, Timer
-from subsystems.shooter import Shooter
+
+from subsystems.shooter_subsystem import ShooterSubsystem
+
 
 class ControlFlywheel(Command):
-    def __init__(self, sub: Shooter, speed: float):
+    def __init__(self, sub: ShooterSubsystem, speed: float):
         super().__init__()
+        self.addRequirements(sub)
 
         self._speed = speed
-        self._Flywheel = sub
+        self._FlywheelSub = sub
 
-
-        self.addRequirements(self._Flywheel)  
+        print(f"ControlFlywheel Command Created with speed: {speed}")
+        self._FlywheelSub.set_shooter_speed(speed)
 
     def initialize(self):
         pass
-        #print("ControlFlywheel Called")
 
     def execute(self):
-        
-        self._Flywheel.flywheel_spin()
+        self._FlywheelSub.set_shooter_speed(self._speed)
+        pass
 
     def isFinished(self) -> bool:
         return True

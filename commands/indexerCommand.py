@@ -35,20 +35,17 @@ class ControlIndexer(Command):
         super().__init__()
 
         self._speed = speed
-        self._ShooterSubSys = sub
+        self._Indexer = sub
 
-        self.addRequirements(self._ShooterSubSys)  
+        self.addRequirements(self._Indexer)
+        self._Indexer.set_indexer_speed(speed)
 
     def initialize(self):
         pass
 
     def execute(self):
-        # if (self._ShooterSubSys.is_shooter_spinning(0.3)):
-        self._ShooterSubSys.indexer_spin(self._speed)
-        # else:
-        #     self._ShooterSubSys.flywheel_spin(0.5)
-        #     print("Flywheel getting ready.")
-
+        self._Indexer.set_indexer_speed(self._speed)
+        pass
 
     def isFinished(self) -> bool:
         return True

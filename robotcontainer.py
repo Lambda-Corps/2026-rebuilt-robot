@@ -12,7 +12,7 @@ from commands2.sysid import SysIdRoutine
 from generated.tuner_constants import TunerConstants
 from telemetry import Telemetry
 
-from pathplannerlib.auto import AutoBuilder
+from pathplannerlib.auto import AutoBuilder, NamedCommands, PathPlannerAuto
 from phoenix6 import swerve
 from wpilib import DriverStation, RobotBase, SmartDashboard
 from wpimath.geometry import Rotation2d, Pose2d
@@ -45,13 +45,16 @@ from commands.LEDrainbow import LEDrainbow
 from subsystems.VisionSubsystem import VisionSubsystem
 from commands.VisionTrackTargetPair import VisionTrackTargetPair
 
-from subsystems.intake import Intake
 from commands.intakeCommand import ControlIntake
 
 from commands.indexerCommand import ControlIndexer
-from subsystems.shooter import Shooter  # Older code, still used for indexer
+
 from commands.ShooterCommand import ShooterCommand  # newer, used by auto-aim
 from commands.changeSpeedFlywheel import ChangeFlywheelSpeed
+from commands.flywheelCommand import ControlFlywheel   # Used by autonomous pathfinder.
+# TODO:  Need to update pathfinder to enable automatic vision tracking
+from commands.flywheelStopCommand import StopFlywheel
+from commands.resetPDHStickyFaults import ResetPDHStickyFaults
 
 from subsystems.shooter_subsystem import ShooterSubsystem
 
@@ -132,19 +135,17 @@ class RobotContainer:
         self.drivetrain = TunerConstants.create_drivetrain()
 
         self._ledsubsystem = LEDSubsystem()
-        self._intake = Intake()
-        self._shooter = Shooter()  # Only used for indexer. Should be renamed. - MR
         self._shooter_subsystem = ShooterSubsystem()
-        #
-        # self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter_subsystem, self._intake))
+        self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter_subsystem, self._shooter_subsystem))
         self._vision_subsystem = VisionSubsystem(self.drivetrain)
 
         # Path follower
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
-        SmartDashboard.putData("Auto Mode", self._auto_chooser)
+        # self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
+        # SmartDashboard.putData("Auto Mode", self._auto_chooser)
 
         # Set up default commands
         self.setDefaultCommands()
+        self.configure_path_planner()
 
     def setDefaultCommands(self) -> None:
         """Set up default commands for subsystems. Called from __init__."""
@@ -192,7 +193,7 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: get_drive_request())
         )
 
-        self._ledsubsystem.setDefaultCommand(LEDCommand(self._ledsubsystem, 0.5))
+        # self._ledsubsystem.setDefaultCommand(LEDCommand(self._ledsubsystem, 0.5))    ##  TODO: Revise LED operation
 
         self.drivetrain.register_telemetry(
             lambda state: self._logger.telemeterize(state)
@@ -217,78 +218,51 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
 
-        # Driver controller bindings
-        self._driver_controller.a().whileTrue(
-            self.drivetrain.apply_request(lambda: self._brake)
-        )
-        self._driver_controller.a().whileFalse(LEDCommand(self._ledsubsystem, 0))
-        self._driver_controller.a().whileTrue(LEDCommand(self._ledsubsystem, 135))
-        self._driver_controller.leftTrigger().whileTrue(
-            ControlIntake(self._intake, INTAKE_SPEED, False)
-        )
-        self._driver_controller.rightTrigger().whileTrue(
-            ControlIntake(self._intake, 0, False)
-        )
+        ## Driver controller bindings
+
+        # Toggle between RobotCentric and FieldCentric on left bumper press
+        self._driver_controller.leftBumper().onTrue(commands2.cmd.runOnce(lambda: self._toggle_drive_mode()))
+
+        # Test? Remove?
         self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
-        # Unsure what this was for so leaving it commented out for now - MR
-        # self._driver_controller.b().whileTrue(
-        #     self.drivetrain.apply_request(
-        #         lambda: self._point.with_module_direction(
-        #             Rotation2d(-self._driver_controller.getLeftY(), -self._driver_controller.getLeftX())
-        #         )
-        #     )
-        # )
+        # Manual shooter on/off
+        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter_subsystem, -SHOOTER_SPEED))
+        self._driver_controller.b().onTrue(StopFlywheel(self._shooter_subsystem))
 
-        # Partner contoller bindings
-        self._partner_controller.leftBumper().whileTrue(
-            ControlIndexer(self._shooter, INDEXER_SPEED)
-        )
-        self._partner_controller.rightBumper().whileTrue(
-            ControlIndexer(self._shooter, 0)
-        )
+        # Intake
+        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._shooter_subsystem, INTAKE_SPEED, False))
+        # self._driver_controller.rightTrigger().whileTrue(ControlIntake(self._shooter_subsystem, 0, False))
+        
+        # Indexer
+        self._driver_controller.x().onTrue(ControlIndexer(self._shooter_subsystem, INDEXER_SPEED))
+        self._driver_controller.y().onTrue(ControlIndexer(self._shooter_subsystem, -INDEXER_SPEED))
 
-        self._partner_controller.a().onTrue(
-            ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -SHOOTER_SPEED)
-        )
-        self._partner_controller.b().onTrue(
-            ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0)
-        )
 
-        self._partner_controller.x().onTrue(
-            ControlIntake(self._intake, INTAKE_SPEED, False)
-        )
-        self._partner_controller.y().onTrue(
-            ControlIntake(self._intake, INTAKE_SPEED, True)
-        )
+        ## Partner contoller bindings
+
+        # Indexer
+        self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter_subsystem, INDEXER_SPEED))
+        self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter_subsystem, 0))
+
+        # Shooter on/off
+        self._partner_controller.a().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -SHOOTER_SPEED))
+        self._partner_controller.b().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0))
+        
+        # Indexer on/off
+        self._partner_controller.x().onTrue(ControlIntake(self._shooter_subsystem, INTAKE_SPEED, False))
+        self._partner_controller.y().onTrue(ControlIntake(self._shooter_subsystem, INTAKE_SPEED, True))
 
         # During auto-aim, speed will be controled based on distance to target
         self._partner_controller.povUp().onTrue(
-            ChangeFlywheelSpeed(self._shooter, FLYWHEEL_SPEED_INCREMENT)
+            ChangeFlywheelSpeed(self._shooter_subsystem, FLYWHEEL_SPEED_INCREMENT)
         )
         self._partner_controller.povDown().onTrue(
-            ChangeFlywheelSpeed(self._shooter, -FLYWHEEL_SPEED_INCREMENT)
+            ChangeFlywheelSpeed(self._shooter_subsystem, -FLYWHEEL_SPEED_INCREMENT)
         )
 
-        # No longer needed I think so commenting, but leaving for now - MR
-        # # Run SysId routines when holding back/start and X/Y.
-        # (self._driver_controller.back() & self._driver_controller.y()).whileTrue(
-        #     self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
-        # )
-        # (self._driver_controller.back() & self._driver_controller.x()).whileTrue(
-        #     self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
-        # )
-        # (self._driver_controller.start() & self._driver_controller.y()).whileTrue(
-        #     self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
-        # )
-        # (self._driver_controller.start() & self._driver_controller.x()).whileTrue(
-        #     self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
-        # )
-
-        # Toggle between RobotCentric and FieldCentric on left bumper press
-        self._driver_controller.leftBumper().onTrue(
-            commands2.cmd.runOnce(lambda: self._toggle_drive_mode())
-        )
+        self._partner_controller.leftTrigger().onTrue(ControlIntake(self._shooter_subsystem, .65, True))
+        self._partner_controller.start().toggleOnTrue(ResetPDHStickyFaults(self._shooter_subsystem))
 
         # Vision tracking: Right Bumper - this is the key binding
         # Pass callbacks to get translation input and drive request from current mode
@@ -316,21 +290,16 @@ class RobotContainer:
                 return self._drive_field_centric
             return self._drive_robot_centric
 
-        rotate_dead_zone = VISION_ROTATE_DEAD_ZONE
-        rotate_speed_reduction = VISION_ROTATE_SPEED_REDUCTION
-
-        joystick = self._driver_controller
-
         def get_rotation():
             # Returns rotation rate (rad/s) from right stick for driver control
             if RobotBase.isSimulation():
-                rot_axis = joystick._hid.getRawAxis(2)
+                rot_axis = self._driver_controller._hid.getRawAxis(2)
             else:
-                rot_axis = joystick._hid.getRawAxis(4)
+                rot_axis = self._driver_controller._hid.getRawAxis(4)
             return (
-                -self.apply_deadzone_and_curve(rot_axis, rotate_dead_zone, exp_scaling)
+                -self.apply_deadzone_and_curve(rot_axis, VISION_ROTATE_DEAD_ZONE, exp_scaling)
                 * self._max_angular_rate
-                * rotate_speed_reduction
+                * VISION_ROTATE_SPEED_REDUCTION
             )
 
         self._driver_controller.rightBumper().toggleOnTrue(
@@ -343,6 +312,7 @@ class RobotContainer:
                     get_rotation,
                 ),
                 ShooterCommand(
+                    # self._shooter_subsystem,
                     self._shooter_subsystem,
                     lambda: self._driver_controller.getRightTriggerAxis(),
                 ),
@@ -350,7 +320,6 @@ class RobotContainer:
         )
         # self._driver_controller.rightBumper().whileTrue(LEDCommand(self._ledsubsystem, 120))
         # self._driver_controller.rightBumper().whileFalse(LEDCommand(self._ledsubsystem, 0))
-        print("[RobotContainer] Vision tracking button bindings set up")
 
         self.drivetrain.register_telemetry(
             lambda state: self._logger.telemeterize(state)
@@ -380,13 +349,17 @@ class RobotContainer:
         if is_red:
             field_width = 16.54
             initial_pose = Pose2d(
-                field_width - initial_pose.x(),
-                initial_pose.y(),
+                field_width - initial_pose.X(),          #  Not absolutely sure this solves the crashing problem. Error moved to line 386
+                # field_width - initial_pose.x(),
+                initial_pose.Y(),
+                # initial_pose.y(),
                 Rotation2d.fromDegrees(180) - initial_pose.rotation(),
             )
 
         # Reset pose estimator
-        self.drivetrain.seedFieldRelative(initial_pose)
+        # self.drivetrain.seedFieldRelative(initial_pose)  DF:  TODO: resolve "seedFieldRelative"
+        self.drivetrain.reset_pose(initial_pose)
+        # self.drivetrain.seedFieldRelative(initial_pose)
         alliance_name = "Red" if is_red else "Blue"
         SmartDashboard.putString(
             "Robot/InitialPose", f"Pos {starting_position_id}, {alliance_name}"
@@ -420,3 +393,20 @@ class RobotContainer:
         :returns: the command to run in autonomous
         """
         return self._auto_chooser.getSelected()
+
+
+    def configure_path_planner(self):
+
+        # Named commands must be created before Autos can be defined
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter_subsystem, -0.6))
+        NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter_subsystem, 0.6))
+        NamedCommands.registerCommand("startflywheelStop", ControlIndexer(self._shooter_subsystem, 0.0))
+        NamedCommands.registerCommand("run_Intake",ControlIntake(self._shooter_subsystem, 0.65, False))
+        NamedCommands.registerCommand("ResetPDHStickyFaults",ResetPDHStickyFaults(self._shooter_subsystem))
+        
+        # Path follower
+        self._auto_chooser = AutoBuilder.buildAutoChooser("midfieldshoot")  # Parameter is default Path
+        self._auto_chooser.addOption("midfieldshoot", PathPlannerAuto("midfieldshoot"))
+        self._auto_chooser.addOption("outpost auto blue", PathPlannerAuto("outpost auto blue"))
+        self._auto_chooser.addOption("get+shoot+get fuel+climb", PathPlannerAuto("get+shoot+get fuel+climb"))
+        SmartDashboard.putData("Auto Mode", self._auto_chooser)

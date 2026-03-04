@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest:*)",
+      "Bash(where:*)",
+      "Bash(\"C:\\\\prj\\\\Lambda-Corps\\\\source\\\\2026-rebuilt-robot\\\\.venv\\\\Scripts\\\\python.exe\" -m pytest:*)",
+      "Bash(C:\\\\prj\\\\Lambda-Corps\\\\source\\\\2026-rebuilt-robot\\\\.venv\\\\Scripts\\\\python.exe -m pytest:*)",
+      "Bash(cmd /c \"cd /d C:\\\\prj\\\\Lambda-Corps\\\\source\\\\2026-rebuilt-robot && .venv\\\\Scripts\\\\python.exe -m pytest tests\\\\test_vision_subsystem.py -v 2>&1\")",
+      "Bash(powershell -Command \"cd 'C:\\\\prj\\\\Lambda-Corps\\\\source\\\\2026-rebuilt-robot'; & 'C:\\\\Users\\\\raina\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python312\\\\python.exe' -m pytest tests\\\\test_vision_subsystem.py -v 2>&1\":*)"
+    ]
+  }
+}
