@@ -68,8 +68,9 @@ class Shooter(Subsystem):
         talon.configurator.apply(config)
         return talon
 
-    def flywheel_spin(self) -> None:
-        self.flywheel_duty_cycle_out.output = self.motor_speed_global
+    def flywheel_spin(self, speed) -> None:
+        self.flywheel_duty_cycle_out.output = speed
+        #self.flywheel_duty_cycle_out.output = self.motor_speed_global
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
         print("Flywheel Spinning")
         print(self.flywheel_duty_cycle_out.output)
