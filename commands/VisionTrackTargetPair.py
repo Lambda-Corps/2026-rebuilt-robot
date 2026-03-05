@@ -135,6 +135,8 @@ class VisionTrackTargetPair(Command):
         SmartDashboard.putString("VisionTrack/TargetPair", "None")
         SmartDashboard.putNumber("VisionTrack/ToleranceLoops", 0)
         SmartDashboard.putBoolean("VisionTrack/Active", False)
+        self._vision.target_distance = 0.0
+        self._vision.heading_error = 180.0
         SmartDashboard.putNumber("VisionTrack/TargetDistance", 0.0)
         SmartDashboard.putNumber("VisionTrack/HeadingError", 180.0)
 
@@ -156,9 +158,7 @@ class VisionTrackTargetPair(Command):
         if self._last_target_offset is not None:
             dx = self._last_target_offset[0] - current_pose.X()
             dy = self._last_target_offset[1] - current_pose.Y()
-            SmartDashboard.putNumber(
-                "VisionTrack/TargetDistance", math.sqrt(dx * dx + dy * dy)
-            )
+            target_distance = math.sqrt(dx * dx + dy * dy)
             # Heading error between robot facing and target direction
             target_heading_deg = math.degrees(math.atan2(dy, dx))
             heading_error = target_heading_deg - current_rotation
@@ -166,12 +166,17 @@ class VisionTrackTargetPair(Command):
                 heading_error -= 360
             while heading_error < -180:
                 heading_error += 360
-            SmartDashboard.putNumber(
-                "VisionTrack/HeadingError", abs(heading_error)
-            )
+            heading_error = abs(heading_error)
         else:
-            SmartDashboard.putNumber("VisionTrack/TargetDistance", 0.0)
-            SmartDashboard.putNumber("VisionTrack/HeadingError", 180.0)
+            target_distance = 0.0
+            heading_error = 180.0
+
+        # Write to VisionSubsystem for direct access by ShooterCommand
+        self._vision.target_distance = target_distance
+        self._vision.heading_error = heading_error
+        # Keep SmartDashboard for diagnostics
+        SmartDashboard.putNumber("VisionTrack/TargetDistance", target_distance)
+        SmartDashboard.putNumber("VisionTrack/HeadingError", heading_error)
 
         # Determine rotation: vision-controlled if tracking, driver-controlled otherwise
         if target_rotation is None:
@@ -434,6 +439,8 @@ class VisionTrackTargetPair(Command):
         if self._consecutive_loops_in_tolerance >= TRACK_CONSECUTIVE_LOOPS_REQUIRED:
             reason = "Locked on target"
 
+        self._vision.target_distance = 0.0
+        self._vision.heading_error = 180.0
         SmartDashboard.putString("VisionTrack/EndReason", reason)
         SmartDashboard.putString("VisionTrack/State", "IDLE")
         SmartDashboard.putBoolean("VisionTrack/Active", False)

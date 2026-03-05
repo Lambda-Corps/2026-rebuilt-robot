@@ -39,14 +39,12 @@ class ShooterSubsystem(Subsystem):
 
     def periodic(self) -> None:
         """Publish telemetry every cycle."""
-        # print(f"ControlFlywheel Called. Speed: {self._shooter_duty_cycle}")
         SmartDashboard.putNumber("Shooter/ShooterDutyCycle", self._shooter_duty_cycle)
         SmartDashboard.putNumber("Shooter/IndexerDutyCycle", self._indexer_duty_cycle)
         SmartDashboard.putNumber("Shooter/IntakeDutyCycle", self._intake_duty_cycle)
 
     def set_shooter_speed(self, duty_cycle: float) -> None:
         """Set shooter motor duty cycle (-1.0 to 1.0)."""
-        print(f"ControlFlywheel Called. duty_cycle: {duty_cycle}")
         self._shooter_duty_cycle = duty_cycle
         self._shooter_motor.set_control(self._shooter_request.with_output(duty_cycle))
 

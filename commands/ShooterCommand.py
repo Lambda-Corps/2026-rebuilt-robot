@@ -11,14 +11,15 @@ When running:
 # TODO: This hasn't been calibrated with real robot testing yet, so the distance-to-duty-cycle mapping and indexer conditions may need adjustment.
 
 Distance persists via odometry even when the camera loses sight of the tags.
-Reads from SmartDashboard key "VisionTrack/TargetDistance" published by
-VisionTrackTargetPair.
+Reads target distance and heading error directly from VisionSubsystem
+(written by VisionTrackTargetPair).
 """
 
 from commands2 import Command
 from wpilib import SmartDashboard
 
 from subsystems.shooter_subsystem import ShooterSubsystem
+from subsystems.VisionSubsystem import VisionSubsystem
 
 from typing import Callable
 
@@ -46,17 +47,20 @@ class ShooterCommand(Command):
     def __init__(
         self,
         shooter_subsystem: ShooterSubsystem,
+        vision_subsystem: VisionSubsystem,
         get_right_trigger: Callable[[], float],
     ) -> None:
         """Initialize shooter command.
 
         Args:
             shooter_subsystem: The ShooterSubsystem instance
+            vision_subsystem: The VisionSubsystem instance (provides target distance and heading error)
             get_right_trigger: Callable returning right trigger axis value (0.0 to 1.0)
         """
         super().__init__()
 
         self._shooter = shooter_subsystem
+        self._vision = vision_subsystem
         self._get_right_trigger = get_right_trigger
 
         self.addRequirements(shooter_subsystem)
@@ -68,7 +72,7 @@ class ShooterCommand(Command):
 
     def execute(self) -> None:
         """Run shooter with distance interpolation; conditionally run indexer."""
-        distance = SmartDashboard.getNumber("VisionTrack/TargetDistance", 0.0)
+        distance = self._vision.target_distance
         has_target = distance > 0.0
 
         # Shooter speed: interpolated when target has been seen, base speed otherwise
@@ -80,7 +84,7 @@ class ShooterCommand(Command):
         self._shooter.set_shooter_speed(shooter_speed)
 
         # Indexer: only when aligned to target AND trigger depressed
-        heading_error = SmartDashboard.getNumber("VisionTrack/HeadingError", 180.0)
+        heading_error = self._vision.heading_error
         is_aligned = heading_error < self.INDEXER_YAW_TOLERANCE_DEG
         trigger_value = self._get_right_trigger()
         is_trigger_depressed = trigger_value > self.TRIGGER_THRESHOLD
@@ -96,9 +100,6 @@ class ShooterCommand(Command):
         SmartDashboard.putNumber("Shooter/ComputedDutyCycle", shooter_speed)
         SmartDashboard.putBoolean("Shooter/HasTarget", has_target)
         SmartDashboard.putNumber("Shooter/HeadingError", heading_error)
-        SmartDashboard.putBoolean("Shooter/IsAligned", is_aligned)
-        SmartDashboard.putNumber("Shooter/TriggerValue", trigger_value)
-        SmartDashboard.putBoolean("Shooter/TriggerDepressed", is_trigger_depressed)
 
     def _interpolate_shooter_speed(self, distance: float) -> float:
         """Linearly interpolate shooter duty cycle based on target distance.

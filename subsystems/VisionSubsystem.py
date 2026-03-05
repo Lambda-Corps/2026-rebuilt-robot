@@ -127,6 +127,11 @@ class VisionSubsystem(Subsystem):
         # so that pose estimation and target tracking see the same frame.
         self._cached_result = None
 
+        # Shared tracking state written by VisionTrackTargetPair, read by ShooterCommand.
+        # Replaces SmartDashboard-based data passing between the two commands.
+        self._target_distance: float = 0.0
+        self._heading_error: float = 180.0
+
         # Simulation setup (only initialized in simulation mode)
         self._vision_sim: Optional[VisionSystemSim] = None
         self._camera_sim: Optional[PhotonCameraSim] = None
@@ -614,3 +619,21 @@ class VisionSubsystem(Subsystem):
             Time in seconds since last valid update
         """
         return Timer.getFPGATimestamp() - self._last_valid_update_time
+
+    @property
+    def target_distance(self) -> float:
+        """Distance to tracked target in meters (0.0 = no target)."""
+        return self._target_distance
+
+    @target_distance.setter
+    def target_distance(self, value: float) -> None:
+        self._target_distance = value
+
+    @property
+    def heading_error(self) -> float:
+        """Absolute heading error to target in degrees (180.0 = no target)."""
+        return self._heading_error
+
+    @heading_error.setter
+    def heading_error(self, value: float) -> None:
+        self._heading_error = value

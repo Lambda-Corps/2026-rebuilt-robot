@@ -218,54 +218,6 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
 
-        ## Driver controller bindings
-
-        # Toggle between RobotCentric and FieldCentric on left bumper press
-        self._driver_controller.leftBumper().onTrue(commands2.cmd.runOnce(lambda: self._toggle_drive_mode()))
-
-        # Test? Remove?
-        self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
-
-        # Manual shooter on/off
-        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter_subsystem, -SHOOTER_SPEED))
-        self._driver_controller.b().onTrue(StopFlywheel(self._shooter_subsystem))
-
-        # Intake
-        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._shooter_subsystem, INTAKE_SPEED, False))
-        # self._driver_controller.rightTrigger().whileTrue(ControlIntake(self._shooter_subsystem, 0, False))
-        
-        # Indexer
-        self._driver_controller.x().onTrue(ControlIndexer(self._shooter_subsystem, INDEXER_SPEED))
-        self._driver_controller.y().onTrue(ControlIndexer(self._shooter_subsystem, -INDEXER_SPEED))
-
-
-        ## Partner contoller bindings
-
-        # Indexer
-        self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter_subsystem, INDEXER_SPEED))
-        self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter_subsystem, 0))
-
-        # Shooter on/off
-        self._partner_controller.a().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -SHOOTER_SPEED))
-        self._partner_controller.b().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0))
-        
-        # Indexer on/off
-        self._partner_controller.x().onTrue(ControlIntake(self._shooter_subsystem, INTAKE_SPEED, False))
-        self._partner_controller.y().onTrue(ControlIntake(self._shooter_subsystem, INTAKE_SPEED, True))
-
-        # During auto-aim, speed will be controled based on distance to target
-        self._partner_controller.povUp().onTrue(
-            ChangeFlywheelSpeed(self._shooter_subsystem, FLYWHEEL_SPEED_INCREMENT)
-        )
-        self._partner_controller.povDown().onTrue(
-            ChangeFlywheelSpeed(self._shooter_subsystem, -FLYWHEEL_SPEED_INCREMENT)
-        )
-
-        self._partner_controller.leftTrigger().onTrue(ControlIntake(self._shooter_subsystem, .65, True))
-        self._partner_controller.start().toggleOnTrue(ResetPDHStickyFaults(self._shooter_subsystem))
-
-        # Vision tracking: Right Bumper - this is the key binding
-        # Pass callbacks to get translation input and drive request from current mode
         def get_translation():
             # Returns (vx, vy) matching ChassisSpeeds convention:
             #   vx = forward/back (from left stick Y)
@@ -302,7 +254,52 @@ class RobotContainer:
                 * VISION_ROTATE_SPEED_REDUCTION
             )
 
-        self._driver_controller.rightBumper().toggleOnTrue(
+        ## Driver controller bindings
+
+        # Toggle between RobotCentric and FieldCentric on left bumper press
+        self._driver_controller.leftBumper().onTrue(commands2.cmd.runOnce(lambda: self._toggle_drive_mode()))
+
+        # Test? Remove?
+        self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
+
+        # Intake
+        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._shooter_subsystem, INTAKE_SPEED, False))
+        # self._driver_controller.rightTrigger().whileTrue(ControlIntake(self._shooter_subsystem, 0, False))
+        
+        # Indexer
+        self._driver_controller.x().onTrue(ControlIndexer(self._shooter_subsystem, INDEXER_SPEED))
+        self._driver_controller.y().onTrue(ControlIndexer(self._shooter_subsystem, -INDEXER_SPEED))
+
+        # Manual shooter on/off
+        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter_subsystem, -SHOOTER_SPEED))
+        self._driver_controller.b().onTrue(StopFlywheel(self._shooter_subsystem))
+
+        # # Auto Shooter Right Trigger
+        # self._driver_controller.rightTrigger().whileTrue(
+        #     commands2.ParallelCommandGroup(
+        #         VisionTrackTargetPair(
+        #             self.drivetrain,
+        #             self._vision_subsystem,
+        #             get_translation,
+        #             get_drive_request,
+        #             get_rotation,
+        #         ),
+        #         ControlFlywheel(self._shooter_subsystem, -SHOOTER_SPEED),
+        #         ControlIndexer(self._shooter_subsystem, INDEXER_SPEED, True)
+        #     )
+        # )
+
+        # Activates auto-aim, shooter, and indexer together while right trigger is held.
+        # Passes callbacks to get translation input and drive request based on current mode (field-centric or robot-centric)
+        # In simulation, the right trigger maps to axis 5 instead of the default axis
+        if RobotBase.isSimulation():
+            right_trigger = Trigger(lambda: self._driver_controller._hid.getRawAxis(5) > 0.5)
+            get_right_trigger_axis = lambda: self._driver_controller._hid.getRawAxis(5)
+        else:
+            right_trigger = self._driver_controller.rightTrigger()
+            get_right_trigger_axis = lambda: self._driver_controller.getRightTriggerAxis()
+
+        right_trigger.whileTrue(
             commands2.ParallelCommandGroup(
                 VisionTrackTargetPair(
                     self.drivetrain,
@@ -312,14 +309,49 @@ class RobotContainer:
                     get_rotation,
                 ),
                 ShooterCommand(
-                    # self._shooter_subsystem,
                     self._shooter_subsystem,
-                    lambda: self._driver_controller.getRightTriggerAxis(),
-                ),
+                    self._vision_subsystem,
+                    get_right_trigger_axis,
+                )
             )
         )
+
+        # Toggle Auto-aim and shooter speed
+        self._driver_controller.rightBumper().toggleOnTrue(
+            commands2.ParallelCommandGroup(
+                VisionTrackTargetPair(
+                    self.drivetrain,
+                    self._vision_subsystem,
+                    get_translation,
+                    get_drive_request,
+                    get_rotation,
+                )
+            ))
         # self._driver_controller.rightBumper().whileTrue(LEDCommand(self._ledsubsystem, 120))
         # self._driver_controller.rightBumper().whileFalse(LEDCommand(self._ledsubsystem, 0))
+
+
+
+        ## Partner contoller bindings
+
+        # Indexer
+        self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter_subsystem, INDEXER_SPEED))
+        self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter_subsystem, 0))
+
+        # Shooter on/off
+        self._partner_controller.a().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, -SHOOTER_SPEED))
+        self._partner_controller.b().onTrue(ShooterSubsystem.set_shooter_speed(self._shooter_subsystem, 0))
+        
+        # Indexer on/off
+        self._partner_controller.x().onTrue(ControlIntake(self._shooter_subsystem, INTAKE_SPEED, False))
+        self._partner_controller.y().onTrue(ControlIntake(self._shooter_subsystem, INTAKE_SPEED, True))
+
+        # During auto-aim, speed will be controled based on distance to target
+        self._partner_controller.povUp().onTrue(ChangeFlywheelSpeed(self._shooter_subsystem, FLYWHEEL_SPEED_INCREMENT))
+        self._partner_controller.povDown().onTrue(ChangeFlywheelSpeed(self._shooter_subsystem, -FLYWHEEL_SPEED_INCREMENT))
+
+        self._partner_controller.leftTrigger().onTrue(ControlIntake(self._shooter_subsystem, .65, True))
+        self._partner_controller.start().toggleOnTrue(ResetPDHStickyFaults(self._shooter_subsystem))
 
         self.drivetrain.register_telemetry(
             lambda state: self._logger.telemeterize(state)

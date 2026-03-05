@@ -22,6 +22,12 @@ import math
 
 from typing import Optional
 
+from vision_metrics.constants import (
+    TRACK_ROTATION_KP,
+    TRACK_ROTATION_KI,
+    TRACK_ROTATION_KD,
+)
+
 
 class VisionAlignTarget(Command):
     """
@@ -51,14 +57,14 @@ class VisionAlignTarget(Command):
     PID_Y_KI = 0.0
     PID_Y_KD = 0.0
 
-    PID_ROTATION_KP = 4.0
-    PID_ROTATION_KI = 0.0
-    PID_ROTATION_KD = 0.0
+    PID_ROTATION_KP = TRACK_ROTATION_KP
+    PID_ROTATION_KI = TRACK_ROTATION_KI
+    PID_ROTATION_KD = TRACK_ROTATION_KD
 
     # Tolerance for completion
-    POSITION_TOLERANCE_M = 0.02  # 2 cm
-    ROTATION_TOLERANCE_DEG = 0.5  # 1 degree
-    CONSECUTIVE_LOOPS_REQUIRED = 4  # Must be within tolerance for 10 loops
+    POSITION_TOLERANCE_M = 0.05  # 2 cm
+    ROTATION_TOLERANCE_DEG = 0.5  # 1/2 degree
+    CONSECUTIVE_LOOPS_REQUIRED = 5  # Must be within tolerance for 10 loops
 
     # Maximum time without vision before timeout (seconds)
     MAX_TIME_WITHOUT_VISION = 1.0
