@@ -5,15 +5,21 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "Top blue auto 1"
+            "name": "startflywheelStart"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "startflywheelStart"
+            "name": "runIntake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Top blue auto 1"
           }
         },
         {
@@ -25,32 +31,19 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 1.0
+            "waitTime": 2.0
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "startflywheelStop"
+            "name": "stopIndexer"
           }
         },
         {
-          "type": "parallel",
+          "type": "path",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Top blue auto 2"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "run_Intake"
-                }
-              }
-            ]
+            "pathName": "Top blue auto 2"
           }
         },
         {
@@ -62,44 +55,25 @@
         {
           "type": "named",
           "data": {
-            "name": "startflywheelStart"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
             "name": "runindexer"
           }
         },
         {
           "type": "wait",
           "data": {
-            "waitTime": 1.0
+            "waitTime": 2.0
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "startflywheelStop"
+            "name": "stopIndexer"
           }
         },
         {
-          "type": "parallel",
+          "type": "path",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Top blue auto 4"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "run_Intake"
-                }
-              }
-            ]
+            "pathName": "Top blue auto 4"
           }
         },
         {

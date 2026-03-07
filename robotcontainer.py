@@ -121,8 +121,7 @@ class RobotContainer:
         self._shooter = Shooter()
         self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter, self._intake))
         # Path follower
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
-        SmartDashboard.putData("Auto Mode", self._auto_chooser)
+        self.configure_path_planner()
 
         # Configure the button bindings
         self.configureButtonBindings()
@@ -280,15 +279,20 @@ class RobotContainer:
     def configure_path_planner(self):
 
         # Named commands must be created before Autos can be defined
-        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -0.6))
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -.6))
+        NamedCommands.registerCommand("startflywheelStop", ControlFlywheel(self._shooter, -.0))
         NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, 0.6))
-        NamedCommands.registerCommand("startflywheelStop", ControlIndexer(self._shooter, 0.0))
-        NamedCommands.registerCommand("run_Intake",ControlIntake(self._intake, 0.65, False))
+        NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
+        NamedCommands.registerCommand("runIntake", ControlIntake(self._intake, 0.65, False))
+        NamedCommands.registerCommand("stopIntake", ControlIntake(self._intake, 0, False))
         
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Left auto")
         self._auto_chooser = AutoBuilder.buildAutoChooser("Mid auto")
         self._auto_chooser = AutoBuilder.buildAutoChooser("Right auto")
+                
+        self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
+        SmartDashboard.putData("Auto Mode", self._auto_chooser)
 
     def shooter_speed_change(self, speed_change: float):
         self.TARGET_SHOOTER_DUTY_CYCLE = self.TARGET_SHOOTER_DUTY_CYCLE - speed_change

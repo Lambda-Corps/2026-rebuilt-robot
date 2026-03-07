@@ -93,6 +93,12 @@
           "data": {
             "pathName": "Right auto 6"
           }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right auto 7"
+          }
         }
       ]
     }
