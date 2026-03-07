@@ -71,11 +71,19 @@ class MyRobot(commands2.TimedCommandRobot):
         # teleop starts running. If you want the autonomous to
         # continue until interrupted by another command, remove
         # this line or comment it out.
+        self._driver_controller = wpilib.Joystick(0)
+        self._partner_controller = wpilib.Joystick(1)
         if self.autonomousCommand:
             self.autonomousCommand.cancel()
 
     def teleopPeriodic(self) -> None:
         """This function is called periodically during operator control"""
+        # for i in range(1,17):
+        #     if self._partner_controller.getRawButtonPressed(i):
+        #         print(f"Button {i} was pressed")
+        # self.last_pov = self._partner_controller.getPOV()
+        # if self.last_pov != -1:
+        #     print(f"last_pov: {self.last_pov}")
         pass
 
     def testInit(self) -> None:

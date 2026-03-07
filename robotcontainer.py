@@ -12,7 +12,7 @@ from commands2.sysid import SysIdRoutine
 from generated.tuner_constants import TunerConstants
 from telemetry import Telemetry
 
-from pathplannerlib.auto import AutoBuilder
+from pathplannerlib.auto import AutoBuilder, NamedCommands, PathPlannerAuto
 from phoenix6 import swerve
 from wpilib import DriverStation, SmartDashboard
 from wpimath.geometry import Rotation2d
@@ -46,6 +46,10 @@ class RobotContainer:
     periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
     subsystems, commands, and button mappings) should be declared here.
     """
+
+    TARGET_SHOOTER_DUTY_CYCLE = 0.0
+    SHOOTER_SPEED_INCREMENT = 0.05
+    SHOOTER_SPEED_MIN = -0.5
 
     def __init__(self) -> None:
 
@@ -115,9 +119,6 @@ class RobotContainer:
         self._ledsubsystem = LEDSubsystem()
         self._intake =  Intake()
         self._shooter = Shooter()
-        # self._intake.setDefaultCommand(ControlIntake(self._intake, False, False))
-        # self._shooter.setDefaultCommand(ControlFlywheel(self._shooter, 0))
-        # self._shooter.setDefaultCommand(ControlIndexer(self._shooter, 0))
         self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter, self._intake))
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
@@ -188,8 +189,12 @@ class RobotContainer:
         #Consider chaining flywheel after indexer
         self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._driver_controller.leftTrigger().whileTrue(ControlIntake(self._intake, 0.65, False))
-        self._driver_controller.rightTrigger().whileTrue(ControlIntake(self._intake, 0, False))
+        self._driver_controller.leftTrigger().whileTrue(
+            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.65))
+            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
+        self._driver_controller.rightTrigger().whileTrue(
+            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.0))
+            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
         self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
         #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
@@ -207,7 +212,6 @@ class RobotContainer:
         self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
-        #self._partner_controller.x().onFalse(ControlIntake(self._intake, False, False))
         self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
         #self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
 
@@ -272,3 +276,28 @@ class RobotContainer:
         :returns: the command to run in autonomous
         """
         return self._auto_chooser.getSelected()
+
+    def configure_path_planner(self):
+
+        # Named commands must be created before Autos can be defined
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -0.6))
+        NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, 0.6))
+        NamedCommands.registerCommand("startflywheelStop", ControlIndexer(self._shooter, 0.0))
+        NamedCommands.registerCommand("run_Intake",ControlIntake(self._intake, 0.65, False))
+        
+        # Path follower
+        self._auto_chooser = AutoBuilder.buildAutoChooser("Left auto")
+        self._auto_chooser = AutoBuilder.buildAutoChooser("Mid auto")
+        self._auto_chooser = AutoBuilder.buildAutoChooser("Right auto")
+
+    def shooter_speed_change(self, speed_change: float):
+        self.TARGET_SHOOTER_DUTY_CYCLE = self.TARGET_SHOOTER_DUTY_CYCLE - speed_change
+        
+        # Clamp speeds
+        if self.TARGET_SHOOTER_DUTY_CYCLE > self.SHOOTER_SPEED_MIN:
+            self.TARGET_SHOOTER_DUTY_CYCLE = self.SHOOTER_SPEED_MIN
+        elif self.TARGET_SHOOTER_DUTY_CYCLE < -1:
+            self.TARGET_SHOOTER_DUTY_CYCLE = -1
+        
+        print(f"FLYWHEEL_UP +: {self.TARGET_SHOOTER_DUTY_CYCLE} ({speed_change})")
+        self._shooter.flywheel_spin(self.TARGET_SHOOTER_DUTY_CYCLE)
