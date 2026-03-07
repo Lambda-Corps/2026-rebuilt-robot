@@ -5,33 +5,27 @@
     "data": {
       "commands": [
         {
-          "type": "path",
-          "data": {
-            "pathName": "Mid auto 1"
-          }
-        },
-        {
           "type": "named",
           "data": {
             "name": "startflywheelStart"
           }
         },
         {
-          "type": "named",
+          "type": "path",
           "data": {
-            "name": "runindexer"
+            "pathName": "Mid auto 1"
           }
         },
         {
           "type": "wait",
           "data": {
-            "waitTime": 2.0
+            "waitTime": 0.1
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "startflywheelStop"
+            "name": "runindexer"
           }
         }
       ]

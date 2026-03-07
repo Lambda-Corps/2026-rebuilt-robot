@@ -8,20 +8,20 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.478313253012048,
-        "y": 7.859698795180723
+        "x": 2.5339199561403505,
+        "y": 8.208442982456141
       },
       "isLocked": false,
       "linkedName": "Top auto blue 3"
     },
     {
       "anchor": {
-        "x": 7.3384165477888725,
-        "y": 6.486875891583452
+        "x": 8.260383771929824,
+        "y": 7.054495614035087
       },
       "prevControl": {
-        "x": 6.248373493975904,
-        "y": 7.91433734939759
+        "x": 5.7216995614035095,
+        "y": 7.121809210526314
       },
       "nextControl": null,
       "isLocked": false,
@@ -47,7 +47,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -55.92280471986937
+    "rotation": -98.34389158403316
   },
   "reversed": false,
   "folder": null,

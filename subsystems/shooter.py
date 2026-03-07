@@ -47,6 +47,7 @@ class Shooter(Subsystem):
 
         self._shooter_indexer: TalonFX = self.__configure_indexer()
         self._shooter_flywheel: TalonFX = self.__configure_flywheel()
+        self.intake_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.flywheel_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.indexer_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.counter = 0
@@ -70,32 +71,8 @@ class Shooter(Subsystem):
 
     def flywheel_spin(self, speed) -> None:
         self.flywheel_duty_cycle_out.output = speed
-        #self.flywheel_duty_cycle_out.output = self.motor_speed_global
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-        print("Flywheel speed set: {speed}")
-            
-
-        # rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
-        # rotor_velocity.refresh()
-        # velocity_value = rotor_velocity.value
-        # print(f"velocity_value: {velocity_value:6.2f}")
-
-
-    # def flywheel_spin_global_control(self) -> None:         
-    #     self.flywheel_enabled = True  # Speed not being controlled by parameter
-    #     if (self.flywheel_enabled):                                       # Global control of Flywheel
-    #         self.counter = self.counter  + 1
-
-    #         self.flywheel_duty_cycle_out.output = self.motor_speed_global           # Speed set by global variable
-    #         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-
-    #     else:
-    #         self.flywheel_duty_cycle_out.output = 0
-    #         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-
-    #     # Get the Velocity of the wheel in Rotations per second    
-    #     
-
+        print(f"Flywheel speed set: {speed}")
 
     def periodic(self):
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
