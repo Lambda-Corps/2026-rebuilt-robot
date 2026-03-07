@@ -36,7 +36,6 @@ class ControlFlywheel(Command):
         self._speed = speed
         self._Flywheel = sub
 
-
         self.addRequirements(self._Flywheel)  
 
     def initialize(self):
@@ -44,7 +43,6 @@ class ControlFlywheel(Command):
         #print("ControlFlywheel Called")
 
     def execute(self):
-        
         self._Flywheel.flywheel_spin(self._speed)
 
     def isFinished(self) -> bool:
