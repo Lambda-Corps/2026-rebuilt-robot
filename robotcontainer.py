@@ -50,6 +50,9 @@ class RobotContainer:
     TARGET_SHOOTER_DUTY_CYCLE = 0.0
     SHOOTER_SPEED_INCREMENT = 0.05
     SHOOTER_SPEED_MIN = -0.5
+    
+    # Track whether we're in field-centric mode
+    IS_FIELD_CENTRIC = True
 
     def __init__(self) -> None:
 
@@ -83,9 +86,6 @@ class RobotContainer:
         self._max_angular_rate = rotationsToRadians(
             0.85
         )  # 3/4 of a rotation per second max angular velocity
-
-        # Track whether we're in field-centric mode
-        self._is_field_centric = False
 
         # Setting up bindings for necessary control of the swerve drive platform
         self._drive_robot_centric = (
@@ -148,7 +148,7 @@ class RobotContainer:
                 lambda: (
                     (
                         self._drive_field_centric
-                        if self._is_field_centric
+                        if self.IS_FIELD_CENTRIC
                         else self._drive_robot_centric
                     )
                     .with_velocity_x(
@@ -252,8 +252,8 @@ class RobotContainer:
 
     def _toggle_drive_mode(self) -> None:
         """Toggle between RobotCentric and FieldCentric drive modes."""
-        self._is_field_centric = not self._is_field_centric
-        mode_name = "FieldCentric" if self._is_field_centric else "RobotCentric"
+        self.IS_FIELD_CENTRIC = not self.IS_FIELD_CENTRIC
+        mode_name = "FieldCentric" if self.IS_FIELD_CENTRIC else "RobotCentric"
         log_smartdashboard_string("Drive Mode", mode_name, min_verbosity=1)
         log_debug(f"Drive mode switched to: {mode_name}", min_verbosity=1)
 

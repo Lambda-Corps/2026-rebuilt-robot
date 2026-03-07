@@ -72,8 +72,7 @@ class Shooter(Subsystem):
         self.flywheel_duty_cycle_out.output = speed
         #self.flywheel_duty_cycle_out.output = self.motor_speed_global
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-        print("Flywheel Spinning")
-        print(self.flywheel_duty_cycle_out.output)
+        print("Flywheel speed set: {speed}")
             
 
         # rotor_velocity = self._shooter_flywheel.get_rotor_velocity()
