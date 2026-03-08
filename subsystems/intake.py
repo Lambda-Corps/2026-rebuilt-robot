@@ -35,6 +35,13 @@ class Intake(Subsystem):
         talon.configurator.apply(config)
         return talon
     
+    def periodic(self) -> None:
+        # Get the Velocity of the wheel in Rotations per second    
+        rotor_velocity = self._intake_motor.get_rotor_velocity()     # Get the Intake speed
+        rotor_velocity.refresh()
+        velocity_value = rotor_velocity.value
+        wpilib.SmartDashboard.putNumber("Intake Speed: ", velocity_value)
+
     def intake_speed_global_control(self) -> None:
         #print("Global Control Ran~")  
         if (self.intake_enabled and not self.intake_reversed):                                         # Global control of intake speed
@@ -46,14 +53,6 @@ class Intake(Subsystem):
         else:
             self.intake_duty_cycle_out.output = 0           # Speed set by global variable
             self._intake_motor.set_control(self.intake_duty_cycle_out)
-
-        # Get the Velocity of the wheel in Rotations per second    
-        rotor_velocity = self._intake_motor.get_rotor_velocity()     # Get the Intake speed
-        rotor_velocity.refresh()
-        velocity_value = rotor_velocity.value
-
-        wpilib.SmartDashboard.putNumber("Intake Speed: ", self.motor_speed_global)
-        wpilib.SmartDashboard.putNumber("Intake Velocity: ", velocity_value)
 
     # def change_speed_variable_function(self, speed_update : float) -> None:
     #     if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
