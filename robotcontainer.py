@@ -28,6 +28,7 @@ from commands.intakeCommand import ControlIntake
 from commands.flywheelCommand import ControlFlywheel
 
 from subsystems.shooter import Shooter
+from subsystems.tunable_shooter import TunableShooter
 
 from subsystems.intake import Intake
 
@@ -118,7 +119,8 @@ class RobotContainer:
         self.drivetrain = TunerConstants.create_drivetrain()
         self._ledsubsystem = LEDSubsystem()
         self._intake =  Intake()
-        self._shooter = Shooter()
+        # self._shooter = Shooter()
+        self._shooter = TunableShooter()
         self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter, self._intake))
         # Path follower
         self.configure_path_planner()
@@ -205,13 +207,21 @@ class RobotContainer:
             commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(-0.05))
         )
 
-
-        self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
-        self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
-        self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
-        self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
-        self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
+        # Assuming you are using CommandXboxController
+        self._partner_controller.leftBumper().whileTrue(
+            self._shooter.run_shoot_sequence()
+        ).onFalse( 
+            commands2.cmd.runOnce(self._shooter.stop_motors, self._shooter)
+        )
+        self._partner_controller.rightBumper().onTrue(
+            commands2.cmd.runOnce(self._shooter.update_config_from_dashboard, self._shooter)
+)
+        # self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
+        # self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
+        # self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
+        # self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
+        # self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
+        # self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
         #self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
 
         self._driver_controller.pov(0).whileTrue(
