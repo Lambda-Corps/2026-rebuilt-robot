@@ -92,9 +92,9 @@ class TunableShooter(Subsystem):
         # empirically measured and tuned.
         # This initial configuration in this code will set them all to zero for safety.  We will
         # use Smart Dashboard to tune these and update this configuration.
-        config.slot0.k_v = -0.114
-        config.slot0.k_s = -0.0148
-        config.slot0.k_p = 0
+        config.slot0.k_v = 0.18
+        config.slot0.k_s = 0.014
+        config.slot0.k_p = 0.2
         config.slot0.k_i = 0  # leave for now
         config.slot0.k_d = 0  # leave for now
         talon.configurator.apply(config)
