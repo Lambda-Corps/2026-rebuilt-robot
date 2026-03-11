@@ -26,6 +26,7 @@ from commands.ledcommand import LEDCommand
 from commands.indexerCommand import ControlIndexer
 from commands.intakeCommand import ControlIntake
 from commands.flywheelCommand import ControlFlywheel
+from commands.FlywheelVelocityCommand import velocityControlFlywheel, StopFlywheel
 
 from subsystems.shooter import Shooter
 from subsystems.tunable_shooter import TunableShooter
@@ -155,7 +156,7 @@ class RobotContainer:
                     .with_velocity_x(
                         # -self._joystick.getLeftY() * self._max_speed  * move_speed_reduction
                         -self.apply_deadzone_and_curve(
-                            self._joystick.getLeftY(), dead_zone, exp_scaling
+                            self._driver_controller.getLeftY(), dead_zone, exp_scaling
                         )
                         * self._max_speed
                         * move_speed_reduction
@@ -164,14 +165,14 @@ class RobotContainer:
                     .with_velocity_y(
                         # -self._joystick.getLeftX() * self._max_speed * move_speed_reduction
                         -self.apply_deadzone_and_curve(
-                            self._joystick.getLeftX(), dead_zone, exp_scaling
+                            self._driver_controller.getLeftX(), dead_zone, exp_scaling
                         )
                         * self._max_speed
                         * move_speed_reduction
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
                         # -self._joystick.getRightX() * self._max_angular_rate    #### DF:  Original
-                        -self._joystick.getRightX()
+                        -self._driver_controller.getRightX()
                         * self._max_angular_rate
                         * rotate_speed_reduction
                         #### DF:  Updated:  Negated
@@ -208,56 +209,59 @@ class RobotContainer:
         )
 
         # Assuming you are using CommandXboxController
-        self._partner_controller.leftBumper().whileTrue(
-            self._shooter.run_shoot_sequence()
-        ).onFalse( 
-            commands2.cmd.runOnce(self._shooter.stop_motors, self._shooter)
+        # self._partner_controller.leftBumper().whileTrue(
+        #     commands2.cmd.runOnce(lambda: self._shooter.run_shoot_sequence, self._shooter)
+        # ).onFalse( 
+        #     commands2.cmd.runOnce(lambda: self._shooter.stop_motors, self._shooter)
+        # )
+        self._partner_controller.start().whileTrue(
+            velocityControlFlywheel(self._shooter).andThen(StopFlywheel(self._shooter))
         )
-        self._partner_controller.rightBumper().onTrue(
+        self._partner_controller.back().onTrue(
             commands2.cmd.runOnce(self._shooter.update_config_from_dashboard, self._shooter)
-)
-        # self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
-        # self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
+        )
+        self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
+        self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
         # self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         # self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        # self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
-        # self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
-        #self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
+        self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
+        self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
+        # self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
 
-        self._driver_controller.pov(0).whileTrue(
-            self.drivetrain.apply_request(
-                lambda: self._forward_straight.with_velocity_x(0.5).with_velocity_y(0)
-            )
-        )
-        self._driver_controller.pov(180).whileTrue(
-            self.drivetrain.apply_request(
-                lambda: self._forward_straight.with_velocity_x(-0.5).with_velocity_y(0)
-            )
-        )
+        # self._driver_controller.pov(0).whileTrue(
+        #     self.drivetrain.apply_request(
+        #         lambda: self._forward_straight.with_velocity_x(0.5).with_velocity_y(0)
+        #     )
+        # )
+        # self._driver_controller.pov(180).whileTrue(
+        #     self.drivetrain.apply_request(
+        #         lambda: self._forward_straight.with_velocity_x(-0.5).with_velocity_y(0)
+        #     )
+        # )
 
-        # Run SysId routines when holding back/start and X/Y.
-        # Note that each routine should be run exactly once in a single log.
-        (self._driver_controller.back() & self._driver_controller.y()).whileTrue(
-            self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
-        )
-        (self._driver_controller.back() & self._driver_controller.x()).whileTrue(
-            self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
-        )
-        (self._driver_controller.start() & self._driver_controller.y()).whileTrue(
-            self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
-        )
-        (self._driver_controller.start() & self._driver_controller.x()).whileTrue(
-            self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
-        )
+        # # Run SysId routines when holding back/start and X/Y.
+        # # Note that each routine should be run exactly once in a single log.
+        # (self._driver_controller.back() & self._driver_controller.y()).whileTrue(
+        #     self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
+        # )
+        # (self._driver_controller.back() & self._driver_controller.x()).whileTrue(
+        #     self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
+        # )
+        # (self._driver_controller.start() & self._driver_controller.y()).whileTrue(
+        #     self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
+        # )
+        # (self._driver_controller.start() & self._driver_controller.x()).whileTrue(
+        #     self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
+        # )
 
-        # Toggle between RobotCentric and FieldCentric on left bumper press
-        self._driver_controller.leftBumper().onTrue(
-            commands2.cmd.runOnce(lambda: self._toggle_drive_mode())
-        )
+        # # Toggle between RobotCentric and FieldCentric on left bumper press
+        # self._driver_controller.leftBumper().onTrue(
+        #     commands2.cmd.runOnce(lambda: self._toggle_drive_mode())
+        # )
 
-        self.drivetrain.register_telemetry(
-            lambda state: self._logger.telemeterize(state)
-        )
+        # self.drivetrain.register_telemetry(
+        #     lambda state: self._logger.telemeterize(state)
+        # )
 
     def _toggle_drive_mode(self) -> None:
         """Toggle between RobotCentric and FieldCentric drive modes."""

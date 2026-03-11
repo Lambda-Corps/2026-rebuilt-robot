@@ -33,21 +33,27 @@ class TunableShooter(Subsystem):
         self.stop_motor_control = NeutralOut(0)
 
         self.index_duty_cycle = DutyCycleOut(0)
+        self.indexer_duty_cycle_out = DutyCycleOut(0.0)
 
         # Debouncer used to make sure the flywheel is at speed
         # This requires the condition to be True for 0.06 seconds (3 scheduler loops)
         self.at_speed_debouncer = Debouncer(0.06, Debouncer.DebounceType.kRising)
         
         # Default tuning values
+        SmartDashboard.putNumber("s_k_p", 0.0)
         SmartDashboard.putNumber("Shooter/kP", 0.1)
         SmartDashboard.putNumber("Shooter/kV", 0.12)
         SmartDashboard.putNumber("Shooter/kS", 0.0)
         SmartDashboard.putNumber("Shooter/Target RPS", 50.0)
         SmartDashboard.putNumber("Shooter/Tolerance", 2.0) # How close is "at speed"?
         SmartDashboard.putNumber("Shooter/IndexerSpeed", 0.5 ) # Needs to be measured first
-        self._target_rps = 0.0
-        self._target_rps_tolerance = 0.0
+        self._target_rps = -30
+        self._target_rps_tolerance = 2
         self._indexer_speed = 0.0
+
+        self.motor_speed_global = 0
+
+        SmartDashboard.putData("ShooterScheduler", self)
 
     def __configure_indexer(self) -> TalonFX:
         talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
@@ -86,8 +92,8 @@ class TunableShooter(Subsystem):
         # empirically measured and tuned.
         # This initial configuration in this code will set them all to zero for safety.  We will
         # use Smart Dashboard to tune these and update this configuration.
-        config.slot0.k_v = 0
-        config.slot0.k_s = 0
+        config.slot0.k_v = -0.114
+        config.slot0.k_s = -0.0148
         config.slot0.k_p = 0
         config.slot0.k_i = 0  # leave for now
         config.slot0.k_d = 0  # leave for now
@@ -146,11 +152,17 @@ class TunableShooter(Subsystem):
     def update_config_from_dashboard(self):
         cfg = TalonFXConfiguration()
         cfg.slot0.k_p = SmartDashboard.getNumber("Shooter/kP", 0.0)
+        kp = SmartDashboard.getNumber("s_k_p", 0.0)
         cfg.slot0.k_v = SmartDashboard.getNumber("Shooter/kV", 0.0)
         cfg.slot0.k_s = SmartDashboard.getNumber("Shooter/kS", 0.0)
+
+        print (f"cfg.slot0.k_p: {cfg.slot0.k_p}  ", end='')
+        print (f"cfg.slot0.k_v: {cfg.slot0.k_v}  ", end='')
+        print (f"cfg.slot0.k_s: {cfg.slot0.k_s} ")
+        print ("===================================")
         
         # Use the correct motor reference
-        self._shooter_flywheel.configurator.apply(cfg)
+        self._shooter_flywheel.configurator.apply(cfg, timeout_seconds=.2)
 
         self._target_rps = SmartDashboard.getNumber("Shooter/Target RPS", 0.0)
         self._target_rps_tolerance = SmartDashboard.getNumber("Shooter/Tolerance", 0.0)
@@ -180,7 +192,7 @@ class TunableShooter(Subsystem):
     def run_shoot_sequence(self) -> Command:
         return SequentialCommandGroup(
                 # 1. Start the motor
-                cmd.runOnce(lambda: self.run_shooter(), self),
+                cmd.runOnce(lambda: self.run_shooter, self),
                 
                 # 2. Wait until the velocity is within tolerance
                 WaitUntilCommand(self.is_at_speed),
@@ -188,3 +200,8 @@ class TunableShooter(Subsystem):
                 # 3. Start the indexer (replace with your actual indexer motor call)
                 cmd.runOnce(lambda: self.index_run(), self) 
         )
+    
+    def indexer_spin(self, indexer_spinspeed: float) -> None:
+        self.indexer_duty_cycle_out.output = indexer_spinspeed
+        self._shooter_indexer.set_control(self.indexer_duty_cycle_out)
+        wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)

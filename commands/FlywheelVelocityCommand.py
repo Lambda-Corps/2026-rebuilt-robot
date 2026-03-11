@@ -27,32 +27,46 @@ from phoenix6.configs import TalonFXConfiguration
 from phoenix6.signals.spn_enums import (InvertedValue, NeutralModeValue, FeedbackSensorSourceValue)
 from phoenix6 import StatusCode
 from wpilib import SmartDashboard, AnalogInput, RobotBase, Timer
-from subsystems.shooter import Shooter
 from subsystems.tunable_shooter import TunableShooter
-from subsystems.ledsubsystem import LEDSubsystem
 
-class ControlIndexer(Command):
-    def __init__(self, sub: TunableShooter, speed: float):
+class velocityControlFlywheel(Command):
+    def __init__(self, sub: TunableShooter):
         super().__init__()
 
-        self._speed = speed
-        self._ShooterSubSys = sub
+        self._Flywheel = sub
 
-        # self.addRequirements(self._ShooterSubSys)  
+        self.addRequirements(self._Flywheel)  
 
     def initialize(self):
-        pass
+        self._Flywheel.update_config_from_dashboard()
+        print("Updated config")
 
     def execute(self):
-        # if (self._ShooterSubSys.is_shooter_spinning(0.3)):
-        self._ShooterSubSys.indexer_spin(self._speed)
-        # else:
-        #     self._ShooterSubSys.flywheel_spin(0.5)
-        #     print("Flywheel getting ready.")
+        self._Flywheel.run_shooter()
 
+    def isFinished(self) -> bool:
+        return False
+
+    def end(self, interrupted: bool):
+        self._Flywheel.stop_shooter()
+
+
+class StopFlywheel(Command):
+    def __init__(self, sub: TunableShooter):
+        super().__init__()
+
+        self._Flywheel = sub
+
+        self.addRequirements(self._Flywheel)  
+
+    def initialize(self):
+        self._Flywheel.stop_motors()
+
+    def execute(self):
+        pass
 
     def isFinished(self) -> bool:
         return True
 
     def end(self, interrupted: bool):
-        pass
+        self._Flywheel.stop_shooter()
