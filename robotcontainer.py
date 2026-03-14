@@ -38,6 +38,7 @@ from commands.ledcommand import LEDCommand
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 
+from commands.climberCommand import SetClimberSpeedandTime
 from generated.tuner_constants import TunerConstants
 from pathplannerlib.auto import AutoBuilder, NamedCommands
 from phoenix6 import swerve
@@ -49,6 +50,10 @@ from wpimath.units import rotationsToRadians
 from subsystems.intake import Intake
 from subsystems.ledsubsystem import LEDSubsystem
 from subsystems.shooter import Shooter
+
+from subsystems.climber import Climber
+from commands.climberCommand import SetClimberSpeedandTime
+
 from subsystems.VisionSubsystem import VisionSubsystem
 from utils.logger import log_debug, log_smartdashboard_string
 
@@ -167,6 +172,7 @@ class RobotContainer:
         self._ledsubsystem = LEDSubsystem()
         self._intake = Intake()
         self._shooter = Shooter()
+        self._climber = Climber()
         self._vision = VisionSubsystem(self.drivetrain)
         self._target_distance = (
             0.0  # Initialized here, updated by _get_tower_direction()
@@ -271,6 +277,8 @@ class RobotContainer:
         self._driver_controller.button(2).onTrue(
             ControlFlywheel(self._shooter, 0))
 
+        self._partner_controller.start().whileTrue(SetClimberSpeedandTime(self._climber, 0.5, 0.5))
+        self._partner_controller.back().whileTrue(SetClimberSpeedandTime(self._climber, -0.5, 0.5))
         # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
         # Intake controls
@@ -292,12 +300,12 @@ class RobotContainer:
             ControlFlywheel(self._shooter, SHOOTER_SPEED_LEFT))
 
         # Shooter speed variable control
-        self._partner_controller.start().onTrue(
-            commands2.cmd.runOnce(
-                lambda: self._shooter.change_speed_variable_function(-SHOOTER_SPEED_INCREMENT)))
-        self._partner_controller.back().onTrue(
-            commands2.cmd.runOnce(
-                lambda: self._shooter.change_speed_variable_function(SHOOTER_SPEED_INCREMENT)))
+        # self._partner_controller.start().onTrue(
+        #     commands2.cmd.runOnce(
+        #         lambda: self._shooter.change_speed_variable_function(-SHOOTER_SPEED_INCREMENT)))
+        # self._partner_controller.back().onTrue(
+        #     commands2.cmd.runOnce(
+        #         lambda: self._shooter.change_speed_variable_function(SHOOTER_SPEED_INCREMENT)))
 
         # Shooter start/stop
         self._partner_controller.a().onTrue(
@@ -460,6 +468,8 @@ class RobotContainer:
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
         NamedCommands.registerCommand("runIntake", ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False))
         NamedCommands.registerCommand("stopIntake", ControlIntake(self._intake, 0, False))
+        NamedCommands.registerCommand("raiseClimber", SetClimberSpeedandTime(self._climber, 0.5, 0.5))
+        NamedCommands.registerCommand("lowerClimber", SetClimberSpeedandTime(self._climber, -0.5, 0.5))
         NamedCommands.registerCommand("AutoAimStationary", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0))
         NamedCommands.registerCommand("AutoAimStationary_2Sec", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(2.0))
         NamedCommands.registerCommand("VisionReseed", commands2.cmd.runOnce(self._attempt_vision_seed))
