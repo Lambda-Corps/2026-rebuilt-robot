@@ -160,7 +160,7 @@ class RobotContainer:
         # Note that X is defined as forward according to WPILib convention,
         # and Y is defined as to the left according to WPILib convention.
 
-        move_speed_reduction = 0.48    #### Added to reduce speed while learning about swerve
+        move_speed_reduction = 0.6    #### Added to reduce speed while learning about swerve
         rotate_speed_reduction = 1.0  ###  NOTE THAT updating _max_speed did not seem to affect speed
         dead_zone = 0.055
         exp_scaling = 1.3
@@ -224,11 +224,19 @@ class RobotContainer:
         #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
         self._driver_controller.povUp().onTrue(
-            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(0.05))
+            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(0.01))
         )
 
         self._driver_controller.povDown().onTrue(
-            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(-0.05))
+            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(-0.01))
+        )
+
+        self._partner_controller.povUp().onTrue(
+            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(0.01))
+        )
+
+        self._partner_controller.povDown().onTrue(
+            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(-0.01))
         )
 
         # Right bumper: hold to auto-rotate toward the alliance tower.
