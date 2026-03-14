@@ -84,7 +84,7 @@ class Shooter(Subsystem):
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
-        #print(f"Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
+        print(f"Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
         wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", velocity_value)
 
     def indexer_spin(self, indexer_spinspeed: float) -> None:
@@ -93,15 +93,15 @@ class Shooter(Subsystem):
         wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
 
     def change_speed_variable_function(self, speed_update: float) -> None:
-        if (self.motor_speed_global > -1) and (self.motor_speed_global < 1):
+        if (self.motor_speed_global + speed_update > -1) and (self.motor_speed_global + speed_update < 1):
             self.motor_speed_global = self.motor_speed_global + speed_update
             print("Speed Changed")
             print(self.motor_speed_global)
         elif self.motor_speed_global <= -1:
-            self.motor_speed_global = -0.95
+            self.motor_speed_global = -1
             print("Lower Limit")
         elif self.motor_speed_global >= 1:
-            self.motor_speed_global = 0.95
+            self.motor_speed_global = 1
             print("Upper Limit")
         
 
