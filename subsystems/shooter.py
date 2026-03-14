@@ -67,24 +67,24 @@ class Shooter(Subsystem):
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
         config.slot0.k_v = 0.18
-        config.slot0.k_s = -0.014
+        config.slot0.k_s = -0.012
         config.slot0.k_p = 0.2
         config.slot0.k_i = 0  # leave for now
         config.slot0.k_d = 0  # leave for now
         talon.configurator.apply(config)
-        talon.configurator.apply(config)
         return talon
 
     def flywheel_spin(self, speed) -> None:
-        self.flywheel_duty_cycle_out.output = speed
+        self.motor_speed_global = speed
+        self.flywheel_duty_cycle_out.output = self.motor_speed_global
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-        print(f"Flywheel speed set: {speed}")
+        print(f"Flywheel speed set: {self.motor_speed_global:6.2f}")
 
     def periodic(self):
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
-        print(f"Global Speed: {self.motor_speed_global:6.2}       velocity_value: {velocity_value:6.2f}")
+        # print(f"Flywheel Speed target: {self.motor_speed_global:6.2}  actual_velocity: {velocity_value:6.2f}")
         wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", velocity_value)
 
     def indexer_spin(self, indexer_spinspeed: float) -> None:
@@ -93,23 +93,16 @@ class Shooter(Subsystem):
         wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
 
     def change_speed_variable_function(self, speed_update: float) -> None:
-        if (self.motor_speed_global + speed_update > -1) and (self.motor_speed_global + speed_update < 1):
+        if (self.motor_speed_global + speed_update >= -1) and (self.motor_speed_global + speed_update <= 1):
             self.motor_speed_global = self.motor_speed_global + speed_update
-            print("Speed Changed")
-            print(self.motor_speed_global)
+            self.flywheel_spin(self.motor_speed_global)
+            print(f"Speed Changed {self.motor_speed_global:6.2}")
         elif self.motor_speed_global <= -1:
             self.motor_speed_global = -1
             print("Lower Limit")
         elif self.motor_speed_global >= 1:
             self.motor_speed_global = 1
             print("Upper Limit")
-        
-
-        #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
-
-    # def enable_flywheel(self, enable, flywheel_spinspeed):
-    #     self.flywheel_enabled  = enable
-    #     self.flywheel_spin(flywheel_spinspeed)
 
     def is_shooter_spinning(self, thresholdPercent) -> bool :
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()

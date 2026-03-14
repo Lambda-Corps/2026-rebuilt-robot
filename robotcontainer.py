@@ -50,7 +50,7 @@ class RobotContainer:
     """
 
     TARGET_SHOOTER_DUTY_CYCLE = 0.0
-    SHOOTER_SPEED_INCREMENT = 0.05
+    SHOOTER_SPEED_INCREMENT = 0.025
     SHOOTER_SPEED_MIN = -0.5
     
     # Track whether we're in field-centric mode
@@ -125,6 +125,7 @@ class RobotContainer:
 
         # Alliance tower field positions (inches → meters)
         _tower_x_blue = 182 * 0.0254    # 4.623 m from blue wall
+        _tower_x_red = 469 * 0.0254    # 4.623 m from blue wall
         _tower_y      = 158.84 * 0.0254 # 4.034 m from either side (mid-field)
         try:
             from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
@@ -134,7 +135,7 @@ class RobotContainer:
         except Exception:
             _field_length = 17.548  # fallback: 2025 Reefscape field length (m)
         self._BLUE_TOWER = Translation2d(_tower_x_blue, _tower_y)
-        self._RED_TOWER  = Translation2d(_field_length - _tower_x_blue, _tower_y)
+        self._RED_TOWER  = Translation2d(_tower_x_red, _tower_y)
 
         self._logger = Telemetry(self._max_speed)
         self._driver_controller = CommandXboxController(0)
@@ -165,6 +166,7 @@ class RobotContainer:
         dead_zone = 0.055
         exp_scaling = 1.3
 
+        # Default drive mode
         self.drivetrain.setDefaultCommand(
             # Drivetrain will execute this command periodically
             self.drivetrain.apply_request(
@@ -204,41 +206,7 @@ class RobotContainer:
             )
         )
 
-
-        # Idle while the robot is disabled. This ensures the configured
-        # neutral mode is applied to the drive motors while disabled.
-        idle = swerve.requests.Idle()
-        Trigger(DriverStation.isDisabled).whileTrue(
-            self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
-        )
-        #Consider chaining flywheel after indexer
-        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
-        self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._driver_controller.leftTrigger().whileTrue(
-            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.65))
-            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
-        self._driver_controller.rightTrigger().whileTrue(
-            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.0))
-            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
-        self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
-        #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
-
-        self._driver_controller.povUp().onTrue(
-            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(0.01))
-        )
-
-        self._driver_controller.povDown().onTrue(
-            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(-0.01))
-        )
-
-        self._partner_controller.povUp().onTrue(
-            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(0.01))
-        )
-
-        self._partner_controller.povDown().onTrue(
-            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(-0.01))
-        )
-
+        # Auto-aim at tower
         # Right bumper: hold to auto-rotate toward the alliance tower.
         # Translation (left stick) still works normally while held.
         self._driver_controller.rightBumper().whileTrue(
@@ -258,6 +226,41 @@ class RobotContainer:
             )
         )
 
+
+        # Idle while the robot is disabled. This ensures the configured
+        # neutral mode is applied to the drive motors while disabled.
+        idle = swerve.requests.Idle()
+        Trigger(DriverStation.isDisabled).whileTrue(
+            self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
+        )
+        #Consider chaining flywheel after indexer
+        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
+        self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
+        self._driver_controller.button(1).onTrue(ControlFlywheel(self._shooter, -0.6))
+        self._driver_controller.button(2).onTrue(ControlFlywheel(self._shooter, 0))
+        self._driver_controller.leftTrigger().whileTrue(
+            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.65))
+            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
+        self._driver_controller.rightTrigger().whileTrue(
+            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.0))
+            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
+        self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
+        #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
+
+        self._driver_controller.povUp().onTrue(
+            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(-self.SHOOTER_SPEED_INCREMENT))
+        )
+        self._driver_controller.povDown().onTrue(
+            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(self.SHOOTER_SPEED_INCREMENT))
+        )
+
+        self._partner_controller.povUp().onTrue(
+            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(-self.SHOOTER_SPEED_INCREMENT))
+        )
+        self._partner_controller.povDown().onTrue(
+            commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(self.SHOOTER_SPEED_INCREMENT))
+        )
+
         self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
         self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
         self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
@@ -265,17 +268,6 @@ class RobotContainer:
         self._partner_controller.x().onTrue(ControlIntake(self._intake, .65, False))
         self._partner_controller.y().onTrue(ControlIntake(self._intake, .65, True))
         #self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
-
-        self._driver_controller.pov(0).whileTrue(
-            self.drivetrain.apply_request(
-                lambda: self._forward_straight.with_velocity_x(0.5).with_velocity_y(0)
-            )
-        )
-        self._driver_controller.pov(180).whileTrue(
-            self.drivetrain.apply_request(
-                lambda: self._forward_straight.with_velocity_x(-0.5).with_velocity_y(0)
-            )
-        )
 
         # Run SysId routines when holding back/start and X/Y.
         # Note that each routine should be run exactly once in a single log.
