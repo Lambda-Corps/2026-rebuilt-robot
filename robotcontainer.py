@@ -296,11 +296,16 @@ class RobotContainer:
         NamedCommands.registerCommand("lowerClimber", SetClimberSpeedandTime(self._climber, -0.5, 0.5))
         
         # Path follower
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Left auto")
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Mid auto")
+        # self._auto_chooser = AutoBuilder.buildAutoChooser("Left auto")
+        # self._auto_chooser = AutoBuilder.buildAutoChooser("Mid auto")
+        # self._auto_chooser = AutoBuilder.buildAutoChooser("Right auto")
+
         self._auto_chooser = AutoBuilder.buildAutoChooser("Right auto")
+        self._auto_chooser.addOption("Left auto", PathPlannerAuto("Left Auto"))
+        self._auto_chooser.addOption("Left auto", PathPlannerAuto("Mid Auto"))
+        self._auto_chooser.addOption("Climber Test 1", PathPlannerAuto("Climber Test 1"))
                 
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
+        # self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
         SmartDashboard.putData("Auto Mode", self._auto_chooser)
 
     def shooter_speed_change(self, speed_change: float):
