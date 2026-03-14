@@ -4,6 +4,8 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 
+import math
+
 import commands2
 import commands2.cmd
 from commands2.button import CommandXboxController, Trigger
@@ -15,7 +17,7 @@ from telemetry import Telemetry
 from pathplannerlib.auto import AutoBuilder, NamedCommands, PathPlannerAuto
 from phoenix6 import swerve
 from wpilib import DriverStation, SmartDashboard
-from wpimath.geometry import Rotation2d
+from wpimath.geometry import Rotation2d, Translation2d
 
 from utils.logger import log_debug, log_smartdashboard_string
 from wpimath.units import rotationsToRadians
@@ -112,6 +114,28 @@ class RobotContainer:
             swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
         )
 
+        # Tower-facing request — auto-rotates toward the alliance tower while
+        # still allowing full translation from the left stick.
+        self._face_tower = (
+            swerve.requests.FieldCentricFacingAngle()
+            .with_drive_request_type(swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE)
+        )
+        self._face_tower.heading_controller.setPID(7.0, 0.0, 0.0)
+        self._face_tower.heading_controller.enableContinuousInput(-math.pi, math.pi)
+
+        # Alliance tower field positions (inches → meters)
+        _tower_x_blue = 182 * 0.0254    # 4.623 m from blue wall
+        _tower_y      = 158.84 * 0.0254 # 4.034 m from either side (mid-field)
+        try:
+            from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
+            _field_length = AprilTagFieldLayout.loadField(
+                AprilTagField.k2026RebuiltWelded
+            ).getFieldLength()
+        except Exception:
+            _field_length = 17.548  # fallback: 2025 Reefscape field length (m)
+        self._BLUE_TOWER = Translation2d(_tower_x_blue, _tower_y)
+        self._RED_TOWER  = Translation2d(_field_length - _tower_x_blue, _tower_y)
+
         self._logger = Telemetry(self._max_speed)
         self._driver_controller = CommandXboxController(0)
         self._partner_controller = CommandXboxController(1)
@@ -151,25 +175,27 @@ class RobotContainer:
                         else self._drive_robot_centric
                     )
                     .with_velocity_x(
-                        # -self._joystick.getLeftY() * self._max_speed  * move_speed_reduction
+                        # -self._driver_controller.getLeftY() * self._max_speed  * move_speed_reduction
                         -self.apply_deadzone_and_curve(
-                            self._joystick.getLeftY(), dead_zone, exp_scaling
+                            self._driver_controller.getLeftY(), dead_zone, exp_scaling
                         )
                         * self._max_speed
                         * move_speed_reduction
                         #### DF:  Updated:  Negated
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
-                        # -self._joystick.getLeftX() * self._max_speed * move_speed_reduction
+                        # -self._driver_controller.getLeftX() * self._max_speed * move_speed_reduction
                         -self.apply_deadzone_and_curve(
-                            self._joystick.getLeftX(), dead_zone, exp_scaling
+                            self._driver_controller.getLeftX(), dead_zone, exp_scaling
                         )
                         * self._max_speed
                         * move_speed_reduction
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
-                        # -self._joystick.getRightX() * self._max_angular_rate    #### DF:  Original
-                        -self._joystick.getRightX()
+                        # -self._driver_controller.getRightX() * self._max_angular_rate    #### DF:  Original
+                        -self.apply_deadzone_and_curve(
+                            self._driver_controller.getRawAxis(2) if wpilib.RobotBase.isSimulation() else self._driver_controller.getRightX(), dead_zone, exp_scaling
+                        )
                         * self._max_angular_rate
                         * rotate_speed_reduction
                         #### DF:  Updated:  Negated
@@ -205,6 +231,24 @@ class RobotContainer:
             commands2.cmd.runOnce(lambda: self._shooter.change_speed_variable_function(-0.05))
         )
 
+        # Right bumper: hold to auto-rotate toward the alliance tower.
+        # Translation (left stick) still works normally while held.
+        self._driver_controller.rightBumper().whileTrue(
+            self.drivetrain.apply_request(
+                lambda: self._face_tower
+                    .with_velocity_x(
+                        -self.apply_deadzone_and_curve(
+                            self._driver_controller.getLeftY(), dead_zone, exp_scaling
+                        ) * self._max_speed * move_speed_reduction
+                    )
+                    .with_velocity_y(
+                        -self.apply_deadzone_and_curve(
+                            self._driver_controller.getLeftX(), dead_zone, exp_scaling
+                        ) * self._max_speed * move_speed_reduction
+                    )
+                    .with_target_direction(self._get_tower_direction())
+            )
+        )
 
         self._partner_controller.leftBumper().whileTrue(ControlIndexer(self._shooter, 0.6))
         self._partner_controller.rightBumper().whileTrue(ControlIndexer(self._shooter, 0))
@@ -255,6 +299,16 @@ class RobotContainer:
         mode_name = "FieldCentric" if self.IS_FIELD_CENTRIC else "RobotCentric"
         log_smartdashboard_string("Drive Mode", mode_name, min_verbosity=1)
         log_debug(f"Drive mode switched to: {mode_name}", min_verbosity=1)
+
+    def _get_tower_direction(self) -> Rotation2d:
+        """Return the field-relative angle from the robot's current pose to its alliance tower."""
+        pose = self.drivetrain.get_state().pose
+        tower = (
+            self._RED_TOWER
+            if DriverStation.getAlliance() == DriverStation.Alliance.kRed
+            else self._BLUE_TOWER
+        )
+        return Rotation2d(math.atan2(tower.y - pose.y, tower.x - pose.x) + math.pi)
 
     def apply_deadzone_and_curve(
         self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
