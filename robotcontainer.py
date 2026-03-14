@@ -9,6 +9,7 @@ import commands2.cmd
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
 
+from commands.climberCommand import SetClimberSpeedandTime
 from generated.tuner_constants import TunerConstants
 from telemetry import Telemetry
 
@@ -28,6 +29,9 @@ from commands.intakeCommand import ControlIntake
 from commands.flywheelCommand import ControlFlywheel
 
 from subsystems.shooter import Shooter
+
+from subsystems.climber import Climber
+from commands.climberCommand import SetClimberSpeedandTime
 
 from subsystems.intake import Intake
 
@@ -119,6 +123,7 @@ class RobotContainer:
         self._ledsubsystem = LEDSubsystem()
         self._intake =  Intake()
         self._shooter = Shooter()
+        self._climber = Climber()
         self._ledsubsystem.setDefaultCommand(LEDCommand( self._ledsubsystem, self._shooter, self._intake))
         # Path follower
         self.configure_path_planner()
@@ -153,7 +158,7 @@ class RobotContainer:
                     .with_velocity_x(
                         # -self._joystick.getLeftY() * self._max_speed  * move_speed_reduction
                         -self.apply_deadzone_and_curve(
-                            self._joystick.getLeftY(), dead_zone, exp_scaling
+                            self._driver_controller.getLeftY(), dead_zone, exp_scaling
                         )
                         * self._max_speed
                         * move_speed_reduction
@@ -162,14 +167,14 @@ class RobotContainer:
                     .with_velocity_y(
                         # -self._joystick.getLeftX() * self._max_speed * move_speed_reduction
                         -self.apply_deadzone_and_curve(
-                            self._joystick.getLeftX(), dead_zone, exp_scaling
+                            self._driver_controller.getLeftX(), dead_zone, exp_scaling
                         )
                         * self._max_speed
                         * move_speed_reduction
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
                         # -self._joystick.getRightX() * self._max_angular_rate    #### DF:  Original
-                        -self._joystick.getRightX()
+                        -self._driver_controller.getRightX()
                         * self._max_angular_rate
                         * rotate_speed_reduction
                         #### DF:  Updated:  Negated
@@ -194,6 +199,8 @@ class RobotContainer:
         self._driver_controller.rightTrigger().whileTrue(
             commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.0))
             .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
+        self._driver_controller.x().whileTrue(SetClimberSpeedandTime(self._climber, 0.5, 0.5))
+        self._driver_controller.y().whileTrue(SetClimberSpeedandTime(self._climber, -0.5, 0.5))
         self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
         #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
@@ -285,6 +292,8 @@ class RobotContainer:
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
         NamedCommands.registerCommand("runIntake", ControlIntake(self._intake, 0.65, False))
         NamedCommands.registerCommand("stopIntake", ControlIntake(self._intake, 0, False))
+        NamedCommands.registerCommand("raiseClimber", SetClimberSpeedandTime(self._climber, 0.5, 0.5))
+        NamedCommands.registerCommand("lowerClimber", SetClimberSpeedandTime(self._climber, -0.5, 0.5))
         
         # Path follower
         self._auto_chooser = AutoBuilder.buildAutoChooser("Left auto")
