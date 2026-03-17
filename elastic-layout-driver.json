@@ -61,6 +61,20 @@
               "data_type": "double",
               "show_submit_button": false
             }
+          },
+          {
+            "title": "TargetDistance",
+            "x": 640.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/TargetDistance",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
           }
         ]
       }
