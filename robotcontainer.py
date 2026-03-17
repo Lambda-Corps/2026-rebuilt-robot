@@ -301,19 +301,37 @@ class RobotContainer:
         log_debug(f"Drive mode switched to: {mode_name}", min_verbosity=1)
 
     def _get_tower_direction(self) -> Rotation2d:
-        """Return the field-relative angle from the robot's current pose to its alliance tower."""
-        pose = self.drivetrain.get_state().pose
+        """Return the field-relative angle from the robot's predicted pose to its alliance tower.
+
+        Uses velocity-based lookahead to compensate for heading PID lag
+        during lateral motion.  Tunable range: 0.04–0.12 s.
+        """
+        LOOKAHEAD_S = 0.14  # ms prediction window
+
+        state = self.drivetrain.get_state()
+        pose = state.pose
+        speeds = state.speeds  # ChassisSpeeds (robot-relative vx, vy, omega)
+
         tower = (
             self._RED_TOWER
             if DriverStation.getAlliance() == DriverStation.Alliance.kRed
             else self._BLUE_TOWER
         )
-        angle = math.atan2(tower.y - pose.y, tower.x - pose.x)
-        # FieldCentricFacingAngle interprets the target relative to the operator
-        # perspective.  Subtract the Red perspective (180°) so the heading is
-        # correct for both alliances.
+
+        # ChassisSpeeds are robot-relative; rotate into field frame
+        heading = pose.rotation().radians()
+        field_vx = speeds.vx * math.cos(heading) - speeds.vy * math.sin(heading)
+        field_vy = speeds.vx * math.sin(heading) + speeds.vy * math.cos(heading)
+
+        # Predict where the robot will be in LOOKAHEAD_S seconds
+        pred_x = pose.x + field_vx * LOOKAHEAD_S
+        pred_y = pose.y + field_vy * LOOKAHEAD_S
+
+        angle = math.atan2(tower.y - pred_y, tower.x - pred_x)
+
         if DriverStation.getAlliance() == DriverStation.Alliance.kRed:
             angle += math.pi
+
         return Rotation2d(angle)
 
     def apply_deadzone_and_curve(
