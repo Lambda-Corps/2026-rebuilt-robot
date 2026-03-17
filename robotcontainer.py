@@ -341,11 +341,10 @@ class RobotContainer:
         NamedCommands.registerCommand("stopIntake", ControlIntake(self._intake, 0, False))
         
         # Path follower
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Left auto")
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Mid auto")
         self._auto_chooser = AutoBuilder.buildAutoChooser("Right auto")
-                
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
+        self._auto_chooser.addOption("Left auto", PathPlannerAuto("Left Auto"))
+        self._auto_chooser.addOption("Left auto", PathPlannerAuto("Mid Auto"))
+        # self._auto_chooser.addOption("Climber Test 1", PathPlannerAuto("Climber Test 1"))
         SmartDashboard.putData("Auto Mode", self._auto_chooser)
 
     def shooter_speed_change(self, speed_change: float):
