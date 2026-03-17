@@ -78,19 +78,20 @@ class Shooter(Subsystem):
         self.motor_speed_global = speed
         self.flywheel_duty_cycle_out.output = self.motor_speed_global
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-        print(f"Flywheel speed set: {self.motor_speed_global:6.2f}")
+        # print(f"Flywheel speed set: {self.motor_speed_global:6.2f}")
+        wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", round(self.motor_speed_global, 2))
 
     def periodic(self):
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
         # print(f"Flywheel Speed target: {self.motor_speed_global:6.2}  actual_velocity: {velocity_value:6.2f}")
-        wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", velocity_value)
+        wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", round(self.motor_speed_global, 2))
 
     def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.indexer_duty_cycle_out.output = indexer_spinspeed
         self._shooter_indexer.set_control(self.indexer_duty_cycle_out)
-        wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
+        # wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
 
     def change_speed_variable_function(self, speed_update: float) -> None:
         if (self.motor_speed_global + speed_update >= -1) and (self.motor_speed_global + speed_update <= 1):
