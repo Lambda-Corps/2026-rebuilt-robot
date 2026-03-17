@@ -53,6 +53,10 @@ class RobotContainer:
     TARGET_SHOOTER_DUTY_CYCLE = 0.0
     SHOOTER_SPEED_INCREMENT = 0.025
     SHOOTER_SPEED_MIN = -0.5
+    SHOOTER_SPEED_UP = SHOOTER_SPEED_MIN
+    SHOOTER_SPEED_RIGHT = -0.8
+    SHOOTER_SPEED_DOWN = -0.7
+    SHOOTER_SPEED_LEFT = -0.6
 
     # Track whether we're in field-centric mode
     IS_FIELD_CENTRIC = True
@@ -221,8 +225,9 @@ class RobotContainer:
         # Auto-aim at tower
         # Right bumper: hold to auto-rotate toward the alliance tower.
         # Translation (left stick) still works normally while held.
-        self._driver_controller.rightBumper().whileTrue(
+        (self._partner_controller.rightTrigger(0.01)).whileTrue(
             commands2.ParallelDeadlineGroup(
+                print("Right Trigger Pressed"),
                 self.drivetrain.apply_request(
                     lambda: self._face_tower.with_velocity_x(
                         -self.apply_deadzone_and_curve(
@@ -256,35 +261,35 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
         # Consider chaining flywheel after indexer
-        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
+        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._driver_controller.button(1).onTrue(ControlFlywheel(self._shooter, -0.6))
+        self._driver_controller.button(1).onTrue(ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
         self._driver_controller.button(2).onTrue(ControlFlywheel(self._shooter, 0))
-        self._driver_controller.leftTrigger().whileTrue(
-            commands2.cmd.runOnce(
-                lambda: setattr(self, "TARGET_SHOOTER_DUTY_CYCLE", 0.65)
-            ).andThen(
-                ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)
-            )
-        )
-        self._driver_controller.rightTrigger().whileTrue(
-            commands2.cmd.runOnce(
-                lambda: setattr(self, "TARGET_SHOOTER_DUTY_CYCLE", 0.0)
-            ).andThen(
-                ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)
-            )
-        )
-        self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
+        # self._driver_controller.leftTrigger().whileTrue(
+        #     commands2.cmd.runOnce(
+        #         lambda: setattr(self, "TARGET_SHOOTER_DUTY_CYCLE", 0.65)
+        #     ).andThen(
+        #         ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)
+        #     )
+        # )
+        # self._driver_controller.rightTrigger().whileTrue(
+        #     commands2.cmd.runOnce(
+        #         lambda: setattr(self, "TARGET_SHOOTER_DUTY_CYCLE", 0.0)
+        #     ).andThen(
+        #         ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)
+        #     )
+        # )
+        # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
         # self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
-        self._driver_controller.povUp().onTrue(
+        self._partner_controller.start().onTrue(
             commands2.cmd.runOnce(
                 lambda: self._shooter.change_speed_variable_function(
                     -self.SHOOTER_SPEED_INCREMENT
                 )
             )
         )
-        self._driver_controller.povDown().onTrue(
+        self._partner_controller.back().onTrue(
             commands2.cmd.runOnce(
                 lambda: self._shooter.change_speed_variable_function(
                     self.SHOOTER_SPEED_INCREMENT
@@ -292,19 +297,18 @@ class RobotContainer:
             )
         )
 
-        self._partner_controller.povUp().onTrue(
-            commands2.cmd.runOnce(
-                lambda: self._shooter.change_speed_variable_function(
-                    -self.SHOOTER_SPEED_INCREMENT
-                )
-            )
+        # Partner shooter speed presets
+        (self._driver_controller.pov(0) | self._partner_controller.pov(0)).onTrue(
+            ControlFlywheel(self._shooter, self.SHOOTER_SPEED_UP)
         )
-        self._partner_controller.povDown().onTrue(
-            commands2.cmd.runOnce(
-                lambda: self._shooter.change_speed_variable_function(
-                    self.SHOOTER_SPEED_INCREMENT
-                )
-            )
+        (self._driver_controller.pov(90) | self._partner_controller.pov(90)).onTrue(
+            ControlFlywheel(self._shooter, self.SHOOTER_SPEED_RIGHT)
+        )
+        (self._driver_controller.pov(180) | self._partner_controller.pov(180)).onTrue(
+            ControlFlywheel(self._shooter, self.SHOOTER_SPEED_DOWN)
+        )
+        (self._driver_controller.pov(270) | self._partner_controller.pov(270)).onTrue(
+            ControlFlywheel(self._shooter, self.SHOOTER_SPEED_LEFT)
         )
 
         self._partner_controller.leftBumper().whileTrue(
@@ -313,7 +317,7 @@ class RobotContainer:
         self._partner_controller.rightBumper().whileTrue(
             ControlIndexer(self._shooter, 0)
         )
-        self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
+        self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
         self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._partner_controller.x().onTrue(ControlIntake(self._intake, 0.65, False))
         self._partner_controller.y().onTrue(ControlIntake(self._intake, 0.65, True))
@@ -421,7 +425,8 @@ class RobotContainer:
 
         :returns: the command to run in autonomous
         """
-        return self._auto_chooser.getSelected()
+        # return self._auto_chooser.getSelected()
+        return
 
     def configure_path_planner(self):
         # Named commands must be created before Autos can be defined
@@ -441,11 +446,11 @@ class RobotContainer:
         )
 
         # Path follower
-        self._auto_chooser = AutoBuilder.buildAutoChooser("Right auto")
-        self._auto_chooser.addOption("Left auto", PathPlannerAuto("Left Auto"))
-        self._auto_chooser.addOption("Left auto", PathPlannerAuto("Mid Auto"))
+        # self._auto_chooser = AutoBuilder.buildAutoChooser("Mid auto", PathPlannerAuto("Mid Auto"))
+        # self._auto_chooser.addOption("Left auto", PathPlannerAuto("Left Auto"))
+        # self._auto_chooser.addOption("Right auto", PathPlannerAuto("Right Auto"))
         # self._auto_chooser.addOption("Climber Test 1", PathPlannerAuto("Climber Test 1"))
-        SmartDashboard.putData("Auto Mode", self._auto_chooser)
+        # SmartDashboard.putData("Auto Mode", self._auto_chooser)
 
     def shooter_speed_change(self, speed_change: float):
         self.TARGET_SHOOTER_DUTY_CYCLE = self.TARGET_SHOOTER_DUTY_CYCLE - speed_change
