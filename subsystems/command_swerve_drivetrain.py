@@ -316,6 +316,10 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
                     else self._BLUE_ALLIANCE_PERSPECTIVE_ROTATION
                 )
                 self._has_applied_operator_perspective = True
+            else:
+                # Alliance unknown (e.g. DS disconnected in sim) — reset so we
+                # re-apply the perspective once a new alliance value arrives.
+                self._has_applied_operator_perspective = False
 
     def _start_sim_thread(self):
         def _sim_periodic():
