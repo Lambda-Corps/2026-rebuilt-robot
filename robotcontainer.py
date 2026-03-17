@@ -308,7 +308,13 @@ class RobotContainer:
             if DriverStation.getAlliance() == DriverStation.Alliance.kRed
             else self._BLUE_TOWER
         )
-        return Rotation2d(math.atan2(tower.y - pose.y, tower.x - pose.x) + math.pi)
+        angle = math.atan2(tower.y - pose.y, tower.x - pose.x)
+        # FieldCentricFacingAngle interprets the target relative to the operator
+        # perspective.  Subtract the Red perspective (180°) so the heading is
+        # correct for both alliances.
+        if DriverStation.getAlliance() == DriverStation.Alliance.kRed:
+            angle += math.pi
+        return Rotation2d(angle)
 
     def apply_deadzone_and_curve(
         self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
