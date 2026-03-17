@@ -329,6 +329,7 @@ class RobotContainer:
 
         angle = math.atan2(tower.y - pred_y, tower.x - pred_x)
 
+        # Because of the rotation that is automatically applied based on aliance, we need to add 180 degrees (pi radians) to the angle when on the red alliance to ensure the robot faces the tower (not backend facing).
         if DriverStation.getAlliance() == DriverStation.Alliance.kRed:
             angle += math.pi
 
