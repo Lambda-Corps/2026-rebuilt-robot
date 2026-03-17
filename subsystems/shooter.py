@@ -40,6 +40,9 @@ from phoenix6.signal_logger import SignalLogger
 
 
 class Shooter(Subsystem):
+
+    MOTOR_SPEED_GLOBAL = 0.6
+
     def __init__(self):
         super().__init__()
 
@@ -52,7 +55,7 @@ class Shooter(Subsystem):
         self.indexer_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.counter = 0
 
-        self.motor_speed_global = 0.5  # Initial speed
+        self.MOTOR_SPEED_GLOBAL = 0.5  # Initial speed
 
     def __configure_indexer(self) -> TalonFX:
         talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
@@ -75,18 +78,18 @@ class Shooter(Subsystem):
         return talon
 
     def flywheel_spin(self, speed) -> None:
-        self.motor_speed_global = speed
-        self.flywheel_duty_cycle_out.output = self.motor_speed_global
+        self.MOTOR_SPEED_GLOBAL = speed
+        self.flywheel_duty_cycle_out.output = self.MOTOR_SPEED_GLOBAL
         self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
-        # print(f"Flywheel speed set: {self.motor_speed_global:6.2f}")
-        wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", round(self.motor_speed_global, 2))
+        # print(f"Flywheel speed set: {self.MOTOR_SPEED_GLOBAL:6.2f}")
+        wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", round(self.MOTOR_SPEED_GLOBAL, 2))
 
     def periodic(self):
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
-        # print(f"Flywheel Speed target: {self.motor_speed_global:6.2}  actual_velocity: {velocity_value:6.2f}")
-        wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", round(self.motor_speed_global, 2))
+        # print(f"Flywheel Speed target: {self.MOTOR_SPEED_GLOBAL:6.2}  actual_velocity: {velocity_value:6.2f}")
+        wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", round(self.MOTOR_SPEED_GLOBAL, 2))
 
     def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.indexer_duty_cycle_out.output = indexer_spinspeed
@@ -94,15 +97,15 @@ class Shooter(Subsystem):
         # wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
 
     def change_speed_variable_function(self, speed_update: float) -> None:
-        if (self.motor_speed_global + speed_update >= -1) and (self.motor_speed_global + speed_update <= 1):
-            self.motor_speed_global = self.motor_speed_global + speed_update
-            self.flywheel_spin(self.motor_speed_global)
-            print(f"Speed Changed {self.motor_speed_global:6.2}")
-        elif self.motor_speed_global <= -1:
-            self.motor_speed_global = -1
+        if (self.MOTOR_SPEED_GLOBAL + speed_update >= -1) and (self.MOTOR_SPEED_GLOBAL + speed_update <= 1):
+            self.MOTOR_SPEED_GLOBAL = self.MOTOR_SPEED_GLOBAL + speed_update
+            self.flywheel_spin(self.MOTOR_SPEED_GLOBAL)
+            print(f"Speed Changed {self.MOTOR_SPEED_GLOBAL:6.2}")
+        elif self.MOTOR_SPEED_GLOBAL <= -1:
+            self.MOTOR_SPEED_GLOBAL = -1
             print("Lower Limit")
-        elif self.motor_speed_global >= 1:
-            self.motor_speed_global = 1
+        elif self.MOTOR_SPEED_GLOBAL >= 1:
+            self.MOTOR_SPEED_GLOBAL = 1
             print("Upper Limit")
 
     def is_shooter_spinning(self, thresholdPercent) -> bool :
@@ -110,6 +113,6 @@ class Shooter(Subsystem):
         # rotor_velocity.refresh()
         currentSpeed=-rotor_velocity.value
         # return True
-        if currentSpeed > thresholdPercent*self.motor_speed_global:
+        if currentSpeed > thresholdPercent*self.MOTOR_SPEED_GLOBAL:
             return True 
         else:return False
