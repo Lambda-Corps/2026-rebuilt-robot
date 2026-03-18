@@ -35,6 +35,8 @@ from subsystems.intake import Intake
 
 from commands.LEDrainbow import LEDrainbow
 
+from subsystems.VisionSubsystem import VisionSubsystem
+
 # ================================================================
 # DF: Added to quiet Console log
 import wpilib
@@ -147,6 +149,7 @@ class RobotContainer:
         self._ledsubsystem = LEDSubsystem()
         self._intake = Intake()
         self._shooter = Shooter()
+        self._vision = VisionSubsystem(self.drivetrain)
         self._target_distance = (
             0.0  # Initialized here, updated by _get_tower_direction()
         )
