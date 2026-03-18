@@ -228,7 +228,7 @@ class RobotContainer:
         # Auto-aim at tower
         # Right bumper: hold to auto-rotate toward the alliance tower.
         # Translation (left stick) still works normally while held.
-        (self._partner_controller.rightTrigger(0.01)).whileTrue(
+        (self._driver_controller.rightTrigger(0.04) | self._partner_controller.rightTrigger(0.05)).whileTrue(
             commands2.ParallelDeadlineGroup(
                 print("Right Trigger Pressed"),
                 self.drivetrain.apply_request(
@@ -325,6 +325,11 @@ class RobotContainer:
         self._partner_controller.x().onTrue(ControlIntake(self._intake, 0.65, False))
         self._partner_controller.y().onTrue(ControlIntake(self._intake, 0.65, True))
         # self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
+
+        # Seed the drivetrain pose from vision to fix origin skew
+        self._partner_controller.rightStick().onTrue(
+            commands2.cmd.runOnce(self._attempt_vision_seed)
+        )
 
         # Run SysId routines when holding back/start and X/Y.
         # Note that each routine should be run exactly once in a single log.
@@ -448,12 +453,17 @@ class RobotContainer:
             "stopIntake", ControlIntake(self._intake, 0, False)
         )
 
-        # Path follower
-        # self._auto_chooser = AutoBuilder.buildAutoChooser("Mid auto", PathPlannerAuto("Mid Auto"))
-        # self._auto_chooser.addOption("Left auto", PathPlannerAuto("Left Auto"))
-        # self._auto_chooser.addOption("Right auto", PathPlannerAuto("Right Auto"))
-        # self._auto_chooser.addOption("Climber Test 1", PathPlannerAuto("Climber Test 1"))
+        # Auto Mode chooser
+        # self._auto_chooser = AutoBuilder.buildAutoChooser("Mid auto")
         # SmartDashboard.putData("Auto Mode", self._auto_chooser)
+
+    def _attempt_vision_seed(self):
+        """Attempt to seed the drivetrain pose and print the result."""
+        success = self._vision.seed_drivetrain_pose()
+        if success:
+            print("Pose seeded successfully from Vision!")
+        else:
+            print("Pose seed failed: No valid vision targets in view.")
 
     def shooter_speed_change(self, speed_change: float):
         self.TARGET_SHOOTER_DUTY_CYCLE = self.TARGET_SHOOTER_DUTY_CYCLE - speed_change
