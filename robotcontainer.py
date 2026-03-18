@@ -230,7 +230,6 @@ class RobotContainer:
         # Translation (left stick) still works normally while held.
         (self._driver_controller.rightTrigger(0.04) | self._partner_controller.rightTrigger(0.05)).whileTrue(
             commands2.ParallelDeadlineGroup(
-                print("Right Trigger Pressed"),
                 self.drivetrain.apply_request(
                     lambda: self._face_tower.with_velocity_x(
                         -self.apply_deadzone_and_curve(
@@ -331,20 +330,22 @@ class RobotContainer:
             commands2.cmd.runOnce(self._attempt_vision_seed)
         )
 
-        # Run SysId routines when holding back/start and X/Y.
-        # Note that each routine should be run exactly once in a single log.
-        (self._driver_controller.back() & self._driver_controller.y()).whileTrue(
-            self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
-        )
-        (self._driver_controller.back() & self._driver_controller.x()).whileTrue(
-            self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
-        )
-        (self._driver_controller.start() & self._driver_controller.y()).whileTrue(
-            self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
-        )
-        (self._driver_controller.start() & self._driver_controller.x()).whileTrue(
-            self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
-        )
+        # # Run SysId routines when holding back/start and X/Y.
+        # # Note that each routine should be run exactly once in a single log.
+        # (self._driver_controller.back() & self._driver_controller.y()).whileTrue(
+        #     self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
+        # )
+        # (self._driver_controller.back() & self._driver_controller.x()).whileTrue(
+        #     self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
+        # )
+        # (self._driver_controller.start() & self._driver_controller.y()).whileTrue(
+        #     self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
+        # )
+        # (self._driver_controller.start() & self._driver_controller.x()).whileTrue(
+        #     self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
+        # )
+
+        self._partner_controller.leftTrigger().whileTrue(ControlIntake(self._intake, 0, False))
 
         # Toggle between RobotCentric and FieldCentric on left bumper press
         self._driver_controller.leftBumper().onTrue(
@@ -411,10 +412,21 @@ class RobotContainer:
     def _flywheel_speed_from_distance(self, distance: float, voltage: float = None) -> float:
         """Return flywheel speed for a given distance using exponential fit: a + b*e^(-c*x),
         scaled by a voltage compensation multiplier."""
-        a = 1.052123
-        b = -0.8252849
-        c = 0.2009788
-        base_speed = a + b * math.exp(-c * distance)
+        ## Set 1
+        # a = 1.052123
+        # b = -0.8252849
+        # c = 0.2009788
+
+        ## Set 2
+        # a = -1.190527
+        # b = 0.8673466
+        # c = 0.1139915
+
+        ## Set 3
+        a =	-1.029403
+        b =	0.8414259
+        c =	0.1867449
+        base_speed = (a + b * math.exp(-c * distance)) * -1
 
         if voltage is None:
             voltage = wpilib.RobotController.getBatteryVoltage()
