@@ -34,7 +34,7 @@ def _compute_std_devs(estimated) -> tuple:
     """Scale measurement uncertainty by tag count and average distance."""
     targets = estimated.targetsUsed
     if not targets:
-        return (1.0, 1.0, 1.0)
+        return (1.0, 1.0, 9999999.0)
 
     total_dist = 0.0
     for t in targets:
@@ -45,12 +45,12 @@ def _compute_std_devs(estimated) -> tuple:
 
     if len(targets) >= 2:
         xy = 0.1 + avg_dist ** 2 * 0.05
-        theta = 0.1
     else:
         xy = 0.5 + avg_dist ** 2 * 0.1
-        theta = 0.5
 
-    return (xy, xy, theta)
+    # Completely reject the vision heading by providing a massive std dev,
+    # forcing the estimator to 100% trust the Pigeon 2 gyro!
+    return (xy, xy, 9999999.0)
 
 
 class VisionSubsystem(commands2.Subsystem):
@@ -201,3 +201,27 @@ class VisionSubsystem(commands2.Subsystem):
     def get_time_since_last_valid_update(self) -> float:
         """Return seconds since the last accepted vision measurement."""
         return Timer.getFPGATimestamp() - self._last_valid_update_time
+
+    def seed_drivetrain_pose(self) -> bool:
+        """Seed the drivetrain's pose (including yaw) from the best vision reading.
+        Returns True if successful, False if no targets are currently visible.
+        """
+        if self._camera is None or self._pose_estimator is None:
+            return False
+
+        try:
+            result = self._camera.getLatestResult()
+            if not result.hasTargets():
+                return False
+
+            estimated = self._pose_estimator.estimateCoprocMultiTagPose(result)
+            if estimated is None:
+                estimated = self._pose_estimator.estimateLowestAmbiguityPose(result)
+
+            if estimated is None:
+                return False
+
+            self._drivetrain.reset_pose(estimated.estimatedPose.toPose2d())
+            return True
+        except Exception:
+            return False
