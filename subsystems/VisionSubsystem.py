@@ -1,7 +1,7 @@
 import math
 
 import commands2
-from wpilib import SmartDashboard, Timer
+from wpilib import DriverStation, SmartDashboard, Timer
 from wpilib.shuffleboard import Shuffleboard
 from wpimath.geometry import Rotation3d, Transform3d, Translation3d
 
@@ -65,6 +65,12 @@ class VisionSubsystem(commands2.Subsystem):
         self._last_valid_update_time = 0.0
         self._consecutive_camera_failures = 0
 
+        if PhotonCamera is None or AprilTagFieldLayout is None:
+            self._camera = None
+            self._pose_estimator = None
+            self._field_layout = None
+            return
+
         self._field_layout = AprilTagFieldLayout.loadField(
             AprilTagField.k2026RebuiltWelded
         )
@@ -104,6 +110,9 @@ class VisionSubsystem(commands2.Subsystem):
         self._sim_notifier.startPeriodic(self._SIM_UPDATE_PERIOD)
 
     def periodic(self) -> None:
+        if self._camera is None or self._pose_estimator is None:
+            return
+
         try:
             result = self._camera.getLatestResult()
             self._consecutive_camera_failures = 0
@@ -147,6 +156,8 @@ class VisionSubsystem(commands2.Subsystem):
 
     def get_target_pose(self, tag_id: int):
         """Return Pose3d of the given AprilTag from field layout, or None."""
+        if self._field_layout is None:
+            return None
         try:
             return self._field_layout.getTagPose(tag_id)
         except Exception:
@@ -154,6 +165,8 @@ class VisionSubsystem(commands2.Subsystem):
 
     def has_targets(self) -> bool:
         """Return True if the camera currently sees any targets."""
+        if self._camera is None:
+            return False
         try:
             result = self._camera.getLatestResult()
             return result.hasTargets()
@@ -162,6 +175,8 @@ class VisionSubsystem(commands2.Subsystem):
 
     def get_best_target_id(self):
         """Return fiducial ID of best target, or None."""
+        if self._camera is None:
+            return None
         try:
             result = self._camera.getLatestResult()
             if not result.hasTargets():
@@ -173,6 +188,8 @@ class VisionSubsystem(commands2.Subsystem):
 
     def get_visible_tag_ids(self) -> list:
         """Return list of fiducial IDs for all currently visible tags."""
+        if self._camera is None:
+            return []
         try:
             result = self._camera.getLatestResult()
             if not result.hasTargets():
