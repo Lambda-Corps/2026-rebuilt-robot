@@ -408,12 +408,21 @@ class RobotContainer:
 
         return Rotation2d(angle)
 
-    def _flywheel_speed_from_distance(self, distance: float) -> float:
-        """Return flywheel speed for a given distance using exponential fit: a + b*e^(-c*x)."""
+    def _flywheel_speed_from_distance(self, distance: float, voltage: float = None) -> float:
+        """Return flywheel speed for a given distance using exponential fit: a + b*e^(-c*x),
+        scaled by a voltage compensation multiplier."""
         a = 1.052123
         b = -0.8252849
         c = 0.2009788
-        return a + b * math.exp(-c * distance)
+        base_speed = a + b * math.exp(-c * distance)
+
+        if voltage is None:
+            voltage = wpilib.RobotController.getBatteryVoltage()
+
+        # Linear scale: 12.5V -> 1.0, 11.8V -> 1.08
+        multiplier = 1.0 + ((12.5 - voltage) / 0.7) * 0.08
+
+        return base_speed * multiplier
 
     def apply_deadzone_and_curve(
         self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
