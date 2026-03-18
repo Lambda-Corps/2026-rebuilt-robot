@@ -199,8 +199,8 @@ class RobotContainer:
         self._driver_controller.rightTrigger().whileTrue(
             commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.0))
             .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
-        self._driver_controller.x().whileTrue(SetClimberSpeedandTime(self._climber, 0.5, 0.5))
-        self._driver_controller.y().whileTrue(SetClimberSpeedandTime(self._climber, -0.5, 0.5))
+        self._driver_controller.x().onTrue(SetClimberSpeedandTime(self._climber, 0.5, 0.5))
+        self._driver_controller.y().onTrue(SetClimberSpeedandTime(self._climber, -0.5, 0.5))
         self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
         #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
@@ -304,6 +304,7 @@ class RobotContainer:
         self._auto_chooser.addOption("Left auto", PathPlannerAuto("Left Auto"))
         self._auto_chooser.addOption("Left auto", PathPlannerAuto("Mid Auto"))
         self._auto_chooser.addOption("Climber Test 1", PathPlannerAuto("Climber Test 1"))
+
                 
         # self._auto_chooser = AutoBuilder.buildAutoChooser("Tests")
         SmartDashboard.putData("Auto Mode", self._auto_chooser)
