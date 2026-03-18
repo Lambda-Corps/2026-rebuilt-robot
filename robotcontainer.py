@@ -245,7 +245,21 @@ class RobotContainer:
         # neutral mode is applied to the drive motors while disabled.
         idle = swerve.requests.Idle()
         Trigger(DriverStation.isDisabled).whileTrue(
-            self.drivetrain.apply_request(lambda: idle).ignoringDisable(True))
+            self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
+        )
+        #Consider chaining flywheel after indexer
+        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
+        self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
+        self._driver_controller.leftTrigger().whileTrue(
+            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.65))
+            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
+        self._driver_controller.rightTrigger().whileTrue(
+            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.0))
+            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
+        self._driver_controller.x().onTrue(SetClimberSpeedandTime(self._climber, 0.5, 0.5))
+        self._driver_controller.y().onTrue(SetClimberSpeedandTime(self._climber, -0.5, 0.5))
+        self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
+        #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
 
         # Driver controls
         self._driver_controller.leftBumper().onTrue(
