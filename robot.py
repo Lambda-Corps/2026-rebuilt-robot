@@ -10,6 +10,7 @@
 #   py -3 -m robotpy installer niweb disable
 
 import wpilib
+import wpinet
 import commands2
 import typing
 
@@ -21,6 +22,9 @@ class MyRobot(commands2.TimedCommandRobot):
     Command v2 robots are encouraged to inherit from TimedCommandRobot, which
     has an implementation of robotPeriodic which runs the scheduler for you
     """
+
+    # Enable Elastic Layout from robot
+    wpinet.WebServer.getInstance().start(5800, wpilib.getDeployDirectory())
 
     autonomousCommand: typing.Optional[commands2.Command] = None
 
