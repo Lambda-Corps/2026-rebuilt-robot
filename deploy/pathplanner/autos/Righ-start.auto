@@ -1,0 +1,135 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "right-to-right-shoot"
+          }
+        },
+        {
+          "type": "sequential",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "VisionReseed"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoAimStationary_2Sec"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "runindexer"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 2.0
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopIndexer"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "right-shoot-to-depot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 2.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "depot-to-right-shoot"
+          }
+        },
+        {
+          "type": "sequential",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "VisionReseed"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoAimStationary_2Sec"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "runindexer"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 2.0
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopIndexer"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIntake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "right-shoot-to-mid-right"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "mid-right-to-mid-center"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "mid-center-to-mid-right"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

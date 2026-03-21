@@ -21,6 +21,19 @@ from wpimath.geometry import Rotation2d, Translation2d
 
 from utils.logger import log_debug, log_smartdashboard_string
 from wpimath.units import rotationsToRadians
+from constants import (
+    TARGET_SHOOTER_DATA,
+    SHOOTER_SPEED_INCREMENT,
+    SHOOTER_SPEED_MIN,
+    SHOOTER_SPEED_UP,
+    SHOOTER_SPEED_RIGHT,
+    SHOOTER_SPEED_DOWN,
+    SHOOTER_SPEED_LEFT,
+    MOVE_SPEED_REDUCTION,
+    ROTATE_SPEED_REDUCTION,
+    DEAD_ZONE,
+    EXP_SCALING,
+)
 
 from subsystems.ledsubsystem import LEDSubsystem
 from commands.ledcommand import LEDCommand
@@ -53,12 +66,6 @@ class RobotContainer:
     """
 
     TARGET_SHOOTER_DUTY_CYCLE = 0.0
-    SHOOTER_SPEED_INCREMENT = 0.025
-    SHOOTER_SPEED_MIN = -0.5
-    SHOOTER_SPEED_UP = SHOOTER_SPEED_MIN
-    SHOOTER_SPEED_RIGHT = -0.8
-    SHOOTER_SPEED_DOWN = -0.7
-    SHOOTER_SPEED_LEFT = -0.6
 
     # Track whether we're in field-centric mode
     IS_FIELD_CENTRIC = True
@@ -162,6 +169,9 @@ class RobotContainer:
         # Configure the button bindings
         self.configureButtonBindings()
 
+    def getAutonomousCommand():
+        return self.autoChooser.getSelected()
+
     def configureButtonBindings(self) -> None:
         """
         Use this method to define your button->command mappings. Buttons can be created by
@@ -171,15 +181,6 @@ class RobotContainer:
 
         # Note that X is defined as forward according to WPILib convention,
         # and Y is defined as to the left according to WPILib convention.
-
-        move_speed_reduction = (
-            0.6  #### Added to reduce speed while learning about swerve
-        )
-        rotate_speed_reduction = (
-            1.0  ###  NOTE THAT updating _max_speed did not seem to affect speed
-        )
-        dead_zone = 0.055
-        exp_scaling = 1.3
 
         # Default drive mode
         self.drivetrain.setDefaultCommand(
@@ -192,21 +193,21 @@ class RobotContainer:
                         else self._drive_robot_centric
                     )
                     .with_velocity_x(
-                        # -self._driver_controller.getLeftY() * self._max_speed  * move_speed_reduction
+                        # -self._driver_controller.getLeftY() * self._max_speed  * MOVE_SPEED_REDUCTION
                         -self.apply_deadzone_and_curve(
-                            self._driver_controller.getLeftY(), dead_zone, exp_scaling
+                            self._driver_controller.getLeftY(), DEAD_ZONE, EXP_SCALING
                         )
                         * self._max_speed
-                        * move_speed_reduction
+                        * MOVE_SPEED_REDUCTION
                         #### DF:  Updated:  Negated
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
-                        # -self._driver_controller.getLeftX() * self._max_speed * move_speed_reduction
+                        # -self._driver_controller.getLeftX() * self._max_speed * MOVE_SPEED_REDUCTION
                         -self.apply_deadzone_and_curve(
-                            self._driver_controller.getLeftX(), dead_zone, exp_scaling
+                            self._driver_controller.getLeftX(), DEAD_ZONE, EXP_SCALING
                         )
                         * self._max_speed
-                        * move_speed_reduction
+                        * MOVE_SPEED_REDUCTION
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
                         # -self._driver_controller.getRightX() * self._max_angular_rate    #### DF:  Original
@@ -214,45 +215,14 @@ class RobotContainer:
                             self._driver_controller.getRawAxis(2)
                             if wpilib.RobotBase.isSimulation()
                             else self._driver_controller.getRightX(),
-                            dead_zone,
-                            exp_scaling,
+                            DEAD_ZONE,
+                            EXP_SCALING,
                         )
                         * self._max_angular_rate
-                        * rotate_speed_reduction
+                        * ROTATE_SPEED_REDUCTION
                         #### DF:  Updated:  Negated
                     )  # Drive counterclockwise with negative X (left)
                 )
-            )
-        )
-
-        # Auto-aim at tower
-        # Right bumper: hold to auto-rotate toward the alliance tower.
-        # Translation (left stick) still works normally while held.
-        (self._driver_controller.rightTrigger(0.04) | self._partner_controller.rightTrigger(0.05)).whileTrue(
-            commands2.ParallelDeadlineGroup(
-                self.drivetrain.apply_request(
-                    lambda: self._face_tower.with_velocity_x(
-                        -self.apply_deadzone_and_curve(
-                            self._driver_controller.getLeftY(), dead_zone, exp_scaling
-                        )
-                        * self._max_speed
-                        * move_speed_reduction
-                    )
-                    .with_velocity_y(
-                        -self.apply_deadzone_and_curve(
-                            self._driver_controller.getLeftX(), dead_zone, exp_scaling
-                        )
-                        * self._max_speed
-                        * move_speed_reduction
-                    )
-                    .with_target_direction(self._get_tower_direction())
-                ),
-                commands2.cmd.run(
-                    lambda: self._shooter.flywheel_spin(
-                        -self._flywheel_speed_from_distance(self._target_distance)
-                    ),
-                    self._shooter,
-                ),
             )
         )
 
@@ -260,101 +230,81 @@ class RobotContainer:
         # neutral mode is applied to the drive motors while disabled.
         idle = swerve.requests.Idle()
         Trigger(DriverStation.isDisabled).whileTrue(
-            self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
-        )
-        # Consider chaining flywheel after indexer
-        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
-        self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._driver_controller.button(1).onTrue(ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
-        self._driver_controller.button(2).onTrue(ControlFlywheel(self._shooter, 0))
-        # self._driver_controller.leftTrigger().whileTrue(
-        #     commands2.cmd.runOnce(
-        #         lambda: setattr(self, "TARGET_SHOOTER_DUTY_CYCLE", 0.65)
-        #     ).andThen(
-        #         ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)
-        #     )
-        # )
-        # self._driver_controller.rightTrigger().whileTrue(
-        #     commands2.cmd.runOnce(
-        #         lambda: setattr(self, "TARGET_SHOOTER_DUTY_CYCLE", 0.0)
-        #     ).andThen(
-        #         ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)
-        #     )
-        # )
-        # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
-        # self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
+            self.drivetrain.apply_request(lambda: idle).ignoringDisable(True))
 
+        # Driver controls
+        self._driver_controller.leftBumper().onTrue(
+            commands2.cmd.runOnce(lambda: self._toggle_drive_mode()))
+        
+        # These methods are passed to the auto-aim and distance shooter command
+        teleop_vel_x = lambda: -self.apply_deadzone_and_curve(
+            self._driver_controller.getLeftY(), DEAD_ZONE, EXP_SCALING
+        ) * self._max_speed * MOVE_SPEED_REDUCTION
+        teleop_vel_y = lambda: -self.apply_deadzone_and_curve(
+            self._driver_controller.getLeftX(), DEAD_ZONE, EXP_SCALING
+        ) * self._max_speed * MOVE_SPEED_REDUCTION
+
+        # Auto-aim at tower
+        # Right trigger: hold to auto-rotate toward the alliance tower.
+        # Translation (left stick) still works normally while held.
+        (self._driver_controller.rightTrigger(0.04) | self._partner_controller.rightTrigger(0.05)).whileTrue(
+            self.auto_aim_and_distance_shooter(teleop_vel_x, teleop_vel_y))
+
+        # Sim "driver" controls
+        self._driver_controller.a().onTrue(
+            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
+        self._driver_controller.b().onTrue(
+            ControlFlywheel(self._shooter, 0))
+        self._driver_controller.button(1).onTrue(
+            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
+        self._driver_controller.button(2).onTrue(
+            ControlFlywheel(self._shooter, 0))
+
+        # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
+
+        # Intake controls
+        self._partner_controller.x().onTrue(
+            ControlIntake(self._intake, 0.65, False))
+        self._partner_controller.y().onTrue(
+            ControlIntake(self._intake, 0.65, True))
+        self._partner_controller.leftTrigger().whileTrue(
+            ControlIntake(self._intake, 0, False))
+
+        # Shooter speed presets
+        (self._driver_controller.pov(0) | self._partner_controller.pov(0)).onTrue(
+            ControlFlywheel(self._shooter, SHOOTER_SPEED_UP))
+        (self._driver_controller.pov(90) | self._partner_controller.pov(90)).onTrue(
+            ControlFlywheel(self._shooter, SHOOTER_SPEED_RIGHT))
+        (self._driver_controller.pov(180) | self._partner_controller.pov(180)).onTrue(
+            ControlFlywheel(self._shooter, SHOOTER_SPEED_DOWN))
+        (self._driver_controller.pov(270) | self._partner_controller.pov(270)).onTrue(
+            ControlFlywheel(self._shooter, SHOOTER_SPEED_LEFT))
+
+        # Shooter speed variable control
         self._partner_controller.start().onTrue(
             commands2.cmd.runOnce(
-                lambda: self._shooter.change_speed_variable_function(
-                    -self.SHOOTER_SPEED_INCREMENT
-                )
-            )
-        )
+                lambda: self._shooter.change_speed_variable_function(-SHOOTER_SPEED_INCREMENT)))
         self._partner_controller.back().onTrue(
             commands2.cmd.runOnce(
-                lambda: self._shooter.change_speed_variable_function(
-                    self.SHOOTER_SPEED_INCREMENT
-                )
-            )
-        )
+                lambda: self._shooter.change_speed_variable_function(SHOOTER_SPEED_INCREMENT)))
 
-        # Partner shooter speed presets
-        (self._driver_controller.pov(0) | self._partner_controller.pov(0)).onTrue(
-            ControlFlywheel(self._shooter, self.SHOOTER_SPEED_UP)
-        )
-        (self._driver_controller.pov(90) | self._partner_controller.pov(90)).onTrue(
-            ControlFlywheel(self._shooter, self.SHOOTER_SPEED_RIGHT)
-        )
-        (self._driver_controller.pov(180) | self._partner_controller.pov(180)).onTrue(
-            ControlFlywheel(self._shooter, self.SHOOTER_SPEED_DOWN)
-        )
-        (self._driver_controller.pov(270) | self._partner_controller.pov(270)).onTrue(
-            ControlFlywheel(self._shooter, self.SHOOTER_SPEED_LEFT)
-        )
+        # Shooter start/stop
+        self._partner_controller.a().onTrue(
+            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
+        self._partner_controller.b().onTrue(
+            ControlFlywheel(self._shooter, 0))
 
+        # Indexer controls
         self._partner_controller.leftBumper().whileTrue(
-            ControlIndexer(self._shooter, 0.6)
-        )
+            ControlIndexer(self._shooter, 0.6))
         self._partner_controller.rightBumper().whileTrue(
-            ControlIndexer(self._shooter, 0)
-        )
-        self._partner_controller.a().onTrue(ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
-        self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._partner_controller.x().onTrue(ControlIntake(self._intake, 0.65, False))
-        self._partner_controller.y().onTrue(ControlIntake(self._intake, 0.65, True))
-        # self._partner_controller.y().onFalse(ControlIntake(self._intake, False, True))
+            ControlIndexer(self._shooter, 0))
 
-        # Seed the drivetrain pose from vision to fix origin skew
         self._partner_controller.rightStick().onTrue(
-            commands2.cmd.runOnce(self._attempt_vision_seed)
-        )
-
-        # # Run SysId routines when holding back/start and X/Y.
-        # # Note that each routine should be run exactly once in a single log.
-        # (self._driver_controller.back() & self._driver_controller.y()).whileTrue(
-        #     self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
-        # )
-        # (self._driver_controller.back() & self._driver_controller.x()).whileTrue(
-        #     self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
-        # )
-        # (self._driver_controller.start() & self._driver_controller.y()).whileTrue(
-        #     self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
-        # )
-        # (self._driver_controller.start() & self._driver_controller.x()).whileTrue(
-        #     self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
-        # )
-
-        self._partner_controller.leftTrigger().whileTrue(ControlIntake(self._intake, 0, False))
-
-        # Toggle between RobotCentric and FieldCentric on left bumper press
-        self._driver_controller.leftBumper().onTrue(
-            commands2.cmd.runOnce(lambda: self._toggle_drive_mode())
-        )
+            commands2.cmd.runOnce(self._attempt_vision_seed))
 
         self.drivetrain.register_telemetry(
-            lambda state: self._logger.telemeterize(state)
-        )
+            lambda state: self._logger.telemeterize(state))
 
     def _toggle_drive_mode(self) -> None:
         """Toggle between RobotCentric and FieldCentric drive modes."""
@@ -413,25 +363,17 @@ class RobotContainer:
         """Return flywheel speed for a given distance using exponential fit: a + b*e^(-c*x),
         scaled by a voltage compensation multiplier."""
         ## Set 1
-        # a = 1.052123
-        # b = -0.8252849
-        # c = 0.2009788
+        a = 1.052123
+        b = -0.8252849
+        c = 0.2009788
+        base_speed = (a + b * math.exp(-c * distance))
 
-        ## Set 2
-        # a = -1.190527
-        # b = 0.8673466
-        # c = 0.1139915
-
-        ## Set 3
-        a =	-1.029403
-        b =	0.8414259
-        c =	0.1867449
-        base_speed = (a + b * math.exp(-c * distance)) * -1
-
+        # base_speed = -1655.005 - (17484.54/-10.4802)*(1 - math.exp(10.4802*distance))
         if voltage is None:
             voltage = wpilib.RobotController.getBatteryVoltage()
 
         # Linear scale: 12.5V -> 1.0, 11.8V -> 1.08
+        # multiplier set to 1 to effectively disable voltage compensation while tuning the shooter
         multiplier = 1.0 + ((12.5 - voltage) / 0.7) * 0.08
 
         return base_speed * multiplier
@@ -449,34 +391,48 @@ class RobotContainer:
         final = curved * (1 if axis_value > 0 else -1)
         return final
 
+    def auto_aim_and_distance_shooter(self, velocity_x_supplier, velocity_y_supplier) -> commands2.Command:
+        """
+        Creates a command that uses _face_tower to aim at the alliance tower and
+        simultaneously spins up the shooter based on distance.
+        """
+        return commands2.ParallelCommandGroup(
+            self.drivetrain.apply_request(
+                lambda: self._face_tower
+                .with_velocity_x(velocity_x_supplier())
+                .with_velocity_y(velocity_y_supplier())
+                .with_target_direction(self._get_tower_direction())
+            ),
+            commands2.cmd.run(
+                lambda: self._shooter.flywheel_spin(
+                    -self._flywheel_speed_from_distance(self._target_distance)
+                ),
+                self._shooter,
+            )
+        )
+
     def getAutonomousCommand(self) -> commands2.Command:
         """Use this to pass the autonomous command to the main {@link Robot} class.
 
         :returns: the command to run in autonomous
         """
-        # return self._auto_chooser.getSelected()
-        return
+        return self.autoChooser.getSelected()
 
     def configure_path_planner(self):
         # Named commands must be created before Autos can be defined
-        NamedCommands.registerCommand(
-            "startflywheelStart", ControlFlywheel(self._shooter, -0.6)
-        )
-        NamedCommands.registerCommand(
-            "startflywheelStop", ControlFlywheel(self._shooter, -0.0)
-        )
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -0.6))
+        NamedCommands.registerCommand("startflywheelStop", ControlFlywheel(self._shooter, -0.0))
         NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, 0.6))
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
-        NamedCommands.registerCommand(
-            "runIntake", ControlIntake(self._intake, 0.65, False)
-        )
-        NamedCommands.registerCommand(
-            "stopIntake", ControlIntake(self._intake, 0, False)
-        )
+        NamedCommands.registerCommand("runIntake", ControlIntake(self._intake, 0.65, False))
+        NamedCommands.registerCommand("stopIntake", ControlIntake(self._intake, 0, False))
+        NamedCommands.registerCommand("AutoAimStationaryContinuous", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0))
+        NamedCommands.registerCommand("AutoAimStationary_2Sec", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(2.0))
+        NamedCommands.registerCommand("VisionReseed", commands2.cmd.runOnce(self._attempt_vision_seed))
+        # Build an auto chooser. This will use Commands.none() as the default option.
+        self.autoChooser = AutoBuilder.buildAutoChooser("Mid auto")
 
-        # Auto Mode chooser
-        # self._auto_chooser = AutoBuilder.buildAutoChooser("Mid auto")
-        # SmartDashboard.putData("Auto Mode", self._auto_chooser)
+        SmartDashboard.putData("Auto Chooser", self.autoChooser)
 
     def _attempt_vision_seed(self):
         """Attempt to seed the drivetrain pose and print the result."""
@@ -490,8 +446,8 @@ class RobotContainer:
         self.TARGET_SHOOTER_DUTY_CYCLE = self.TARGET_SHOOTER_DUTY_CYCLE - speed_change
 
         # Clamp speeds
-        if self.TARGET_SHOOTER_DUTY_CYCLE > self.SHOOTER_SPEED_MIN:
-            self.TARGET_SHOOTER_DUTY_CYCLE = self.SHOOTER_SPEED_MIN
+        if self.TARGET_SHOOTER_DUTY_CYCLE > SHOOTER_SPEED_MIN:
+            self.TARGET_SHOOTER_DUTY_CYCLE = SHOOTER_SPEED_MIN
         elif self.TARGET_SHOOTER_DUTY_CYCLE < -1:
             self.TARGET_SHOOTER_DUTY_CYCLE = -1
 
