@@ -11,9 +11,27 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "runIntake"
+          }
+        },
+        {
           "type": "path",
           "data": {
-            "pathName": "Right auto 1"
+            "pathName": "left-start-to-left-shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "VisionReseed"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimStationary"
           }
         },
         {
@@ -35,27 +53,27 @@
           }
         },
         {
+          "type": "path",
+          "data": {
+            "pathName": "left-shoot-to-corral"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "corral-to-left-shoot"
+          }
+        },
+        {
           "type": "named",
           "data": {
-            "name": "runIntake"
+            "name": "VisionReseed"
           }
         },
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "Right auto 2"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 3.0
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Right auto 3"
+            "name": "AutoAimStationary"
           }
         },
         {
@@ -67,7 +85,7 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 3.0
+            "waitTime": 2.0
           }
         },
         {
@@ -79,25 +97,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Right auto 4"
+            "pathName": "left-shoot-to-mid-left"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Right auto 5"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Right auto 6"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Right auto 7"
+            "pathName": "mid-left-to-left"
           }
         }
       ]

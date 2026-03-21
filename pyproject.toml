@@ -28,6 +28,7 @@ robotpy_version = "2026.2.2"
 components = [
     # "all",
     "commands2",
+    "cipy",
     # "cscore",
     # "navx",
     # "phoenix5",
@@ -42,5 +43,6 @@ components = [
 requires = [
     "phoenix6~=26.1",
     "robotpy_pathplannerlib~=2026.1.1",
-    "photonlibpy>=2026.0.1b38"
+    "photonlibpy>=2026.0.1b38",
+    "numpy"
 ]
