@@ -33,6 +33,9 @@ from constants import (
     ROTATE_SPEED_REDUCTION,
     DEAD_ZONE,
     EXP_SCALING,
+    FLYWHEEL_CURVE_A,
+    FLYWHEEL_CURVE_B,
+    FLYWHEEL_CURVE_C,
 )
 
 from subsystems.ledsubsystem import LEDSubsystem
@@ -363,18 +366,19 @@ class RobotContainer:
         """Return flywheel speed for a given distance using exponential fit: a + b*e^(-c*x),
         scaled by a voltage compensation multiplier."""
         ## Set 1
-        a = 1.052123
-        b = -0.8252849
-        c = 0.2009788
-        base_speed = (a + b * math.exp(-c * distance))
+        FLYWHEEL_CURVE_A = 1.052123
+        FLYWHEEL_CURVE_B = -0.8252849
+        FLYWHEEL_CURVE_C = 0.2009788
+        base_speed = (FLYWHEEL_CURVE_A + FLYWHEEL_CURVE_B * math.exp(-FLYWHEEL_CURVE_C * distance))
 
-        # base_speed = -1655.005 - (17484.54/-10.4802)*(1 - math.exp(10.4802*distance))
+        #base_speed = FLYWHEEL_CURVE_A * (distance ** 2) + FLYWHEEL_CURVE_B * distance + FLYWHEEL_CURVE_C
+
         if voltage is None:
             voltage = wpilib.RobotController.getBatteryVoltage()
 
         # Linear scale: 12.5V -> 1.0, 11.8V -> 1.08
         # multiplier set to 1 to effectively disable voltage compensation while tuning the shooter
-        multiplier = 1.0 + ((12.5 - voltage) / 0.7) * 0.08
+        multiplier = 1 # 1.0 + ((12.5 - voltage) / 0.7) * 0.08
 
         return base_speed * multiplier
 
@@ -420,7 +424,7 @@ class RobotContainer:
 
     def configure_path_planner(self):
         # Named commands must be created before Autos can be defined
-        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -0.6))
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -0.5))
         NamedCommands.registerCommand("startflywheelStop", ControlFlywheel(self._shooter, -0.0))
         NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, 0.6))
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
@@ -430,7 +434,7 @@ class RobotContainer:
         NamedCommands.registerCommand("AutoAimStationary_2Sec", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(2.0))
         NamedCommands.registerCommand("VisionReseed", commands2.cmd.runOnce(self._attempt_vision_seed))
         # Build an auto chooser. This will use Commands.none() as the default option.
-        self.autoChooser = AutoBuilder.buildAutoChooser("Mid auto")
+        self.autoChooser = AutoBuilder.buildAutoChooser("Mid-start")
 
         SmartDashboard.putData("Auto Chooser", self.autoChooser)
 
@@ -451,5 +455,5 @@ class RobotContainer:
         elif self.TARGET_SHOOTER_DUTY_CYCLE < -1:
             self.TARGET_SHOOTER_DUTY_CYCLE = -1
 
-        print(f"FLYWHEEL_UP +: {self.TARGET_SHOOTER_DUTY_CYCLE} ({speed_change})")
+        print(f"shooter_speed_change +: {self.TARGET_SHOOTER_DUTY_CYCLE} ({speed_change})")
         self._shooter.flywheel_spin(self.TARGET_SHOOTER_DUTY_CYCLE)
