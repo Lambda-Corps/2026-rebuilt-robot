@@ -8,6 +8,7 @@ from utils.logger import (
     log_smartdashboard_number,
     log_smartdashboard_boolean,
 )
+from constants import MIN_FLYWHEEL_RPS, MAX_FLYWHEEL_RPS
 from wpilib.simulation import FlywheelSim
 from wpimath.system.plant import DCMotor
 from phoenix6.configs import (
@@ -41,7 +42,7 @@ from phoenix6.signal_logger import SignalLogger
 
 class Shooter(Subsystem):
 
-    MOTOR_SPEED_GLOBAL = 0.6
+    MOTOR_SPEED_GLOBAL = 50.0
 
     def __init__(self):
         super().__init__()
@@ -51,11 +52,11 @@ class Shooter(Subsystem):
         self._shooter_indexer: TalonFX = self.__configure_indexer()
         self._shooter_flywheel: TalonFX = self.__configure_flywheel()
         self.intake_duty_cycle_out = controls.DutyCycleOut(0.0)
-        self.flywheel_duty_cycle_out = controls.DutyCycleOut(0.0)
+        self.flywheel_velocity_voltage = controls.VelocityVoltage(0.0)
         self.indexer_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.counter = 0
 
-        self.MOTOR_SPEED_GLOBAL = 0.5  # Initial speed
+        self.MOTOR_SPEED_GLOBAL = 50.0  # Initial speed
 
     def __configure_indexer(self) -> TalonFX:
         talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
@@ -79,17 +80,22 @@ class Shooter(Subsystem):
 
     def flywheel_spin(self, speed) -> None:
         self.MOTOR_SPEED_GLOBAL = speed
-        self.flywheel_duty_cycle_out.output = self.MOTOR_SPEED_GLOBAL
-        self._shooter_flywheel.set_control(self.flywheel_duty_cycle_out)
+        self.flywheel_velocity_voltage.velocity = self.MOTOR_SPEED_GLOBAL
+        self._shooter_flywheel.set_control(self.flywheel_velocity_voltage)
         # print(f"Flywheel speed set: {self.MOTOR_SPEED_GLOBAL:6.2f}")
-        wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", round(self.MOTOR_SPEED_GLOBAL, 2))
+        wpilib.SmartDashboard.putNumber("Flywheel RPS Requested", self.MOTOR_SPEED_GLOBAL)
 
     def periodic(self):
+        dashboard_rps = wpilib.SmartDashboard.getNumber("Flywheel RPS Requested", self.MOTOR_SPEED_GLOBAL)
+        if abs(dashboard_rps - self.MOTOR_SPEED_GLOBAL) > 0.001:
+            self.flywheel_spin(dashboard_rps)
+
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
         # print(f"Flywheel Speed target: {self.MOTOR_SPEED_GLOBAL:6.2}  actual_velocity: {velocity_value:6.2f}")
-        wpilib.SmartDashboard.putNumber("FlyWheel Velocity: ", round(self.MOTOR_SPEED_GLOBAL, 2))
+        wpilib.SmartDashboard.putNumber("Flywheel RPS Requested", self.MOTOR_SPEED_GLOBAL)
+        wpilib.SmartDashboard.putNumber("FlyWheel RPS Actual: ", round(velocity_value, 2))
 
     def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.indexer_duty_cycle_out.output = indexer_spinspeed
@@ -97,15 +103,16 @@ class Shooter(Subsystem):
         # wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
 
     def change_speed_variable_function(self, speed_update: float) -> None:
-        if (self.MOTOR_SPEED_GLOBAL + speed_update >= -1) and (self.MOTOR_SPEED_GLOBAL + speed_update <= 1):
-            self.MOTOR_SPEED_GLOBAL = self.MOTOR_SPEED_GLOBAL + speed_update
+        new_speed = self.MOTOR_SPEED_GLOBAL + speed_update
+        if MIN_FLYWHEEL_RPS <= new_speed <= MAX_FLYWHEEL_RPS:
+            self.MOTOR_SPEED_GLOBAL = new_speed
             self.flywheel_spin(self.MOTOR_SPEED_GLOBAL)
-            print(f"Speed Changed {self.MOTOR_SPEED_GLOBAL:6.2}")
-        elif self.MOTOR_SPEED_GLOBAL <= -1:
-            self.MOTOR_SPEED_GLOBAL = -1
+            print(f"Speed Changed {self.MOTOR_SPEED_GLOBAL:6.2f}")
+        elif new_speed <= MIN_FLYWHEEL_RPS:
+            self.MOTOR_SPEED_GLOBAL = MIN_FLYWHEEL_RPS
             print("Lower Limit")
-        elif self.MOTOR_SPEED_GLOBAL >= 1:
-            self.MOTOR_SPEED_GLOBAL = 1
+        elif new_speed >= MAX_FLYWHEEL_RPS:
+            self.MOTOR_SPEED_GLOBAL = MAX_FLYWHEEL_RPS
             print("Upper Limit")
 
     def is_shooter_spinning(self, thresholdPercent) -> bool :
