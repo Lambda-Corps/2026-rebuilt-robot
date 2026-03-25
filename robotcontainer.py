@@ -95,8 +95,8 @@ class RobotContainer:
         self._max_speed = (
             TunerConstants.speed_at_12_volts
         )  # speed_at_12_volts desired top speed
-        self._max_angular_rate = rotationsToRadians(
-            0.85
+        self._max_angular_rate = rotationsToRadians(     # Initial Value is 0.85
+            1.2
         )  # 3/4 of a rotation per second max angular velocity
 
         # Setting up bindings for necessary control of the swerve drive platform
@@ -264,9 +264,9 @@ class RobotContainer:
 
         # Intake controls
         self._partner_controller.x().onTrue(
-            ControlIntake(self._intake, 0.65, False))
+            ControlIntake(self._intake, 0.95, False))    # Original value 0.65
         self._partner_controller.y().onTrue(
-            ControlIntake(self._intake, 0.65, True))
+            ControlIntake(self._intake, 0.95, True))
         self._partner_controller.leftTrigger().whileTrue(
             ControlIntake(self._intake, 0, False))
 
@@ -296,7 +296,7 @@ class RobotContainer:
 
         # Indexer controls
         self._partner_controller.leftBumper().whileTrue(
-            ControlIndexer(self._shooter, 0.6))
+            ControlIndexer(self._shooter, 0.8))                   ## Original values 0.6
         self._partner_controller.rightBumper().whileTrue(
             ControlIndexer(self._shooter, 0))
 
