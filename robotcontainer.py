@@ -36,6 +36,7 @@ from constants import (
     FLYWHEEL_CURVE_A,
     FLYWHEEL_CURVE_B,
     FLYWHEEL_CURVE_C,
+    MIN_FLYWHEEL_RPS,
 )
 
 from subsystems.ledsubsystem import LEDSubsystem
@@ -68,7 +69,7 @@ class RobotContainer:
     subsystems, commands, and button mappings) should be declared here.
     """
 
-    TARGET_SHOOTER_DUTY_CYCLE = 0.0
+    TARGET_SHOOTER_SPEED = 0.0
 
     # Track whether we're in field-centric mode
     IS_FIELD_CENTRIC = True
@@ -380,7 +381,8 @@ class RobotContainer:
         # multiplier set to 1 to effectively disable voltage compensation while tuning the shooter
         multiplier = 1 # 1.0 + ((12.5 - voltage) / 0.7) * 0.08
 
-        return base_speed * multiplier
+        # Curve outputs DutyCycle approximation (e.g. 0.5 to 1.0). Convert to approx RPS by multiplying by 100.
+        return (base_speed * 100.0) * multiplier
 
     def apply_deadzone_and_curve(
         self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
@@ -424,7 +426,7 @@ class RobotContainer:
 
     def configure_path_planner(self):
         # Named commands must be created before Autos can be defined
-        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -0.5))
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -50.0))
         NamedCommands.registerCommand("startflywheelStop", ControlFlywheel(self._shooter, -0.0))
         NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, 0.6))
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
@@ -447,13 +449,13 @@ class RobotContainer:
             print("Pose seed failed: No valid vision targets in view.")
 
     def shooter_speed_change(self, speed_change: float):
-        self.TARGET_SHOOTER_DUTY_CYCLE = self.TARGET_SHOOTER_DUTY_CYCLE - speed_change
+        self.TARGET_SHOOTER_SPEED = self.TARGET_SHOOTER_SPEED - speed_change
 
         # Clamp speeds
-        if self.TARGET_SHOOTER_DUTY_CYCLE > SHOOTER_SPEED_MIN:
-            self.TARGET_SHOOTER_DUTY_CYCLE = SHOOTER_SPEED_MIN
-        elif self.TARGET_SHOOTER_DUTY_CYCLE < -1:
-            self.TARGET_SHOOTER_DUTY_CYCLE = -1
+        if self.TARGET_SHOOTER_SPEED > SHOOTER_SPEED_MIN:
+            self.TARGET_SHOOTER_SPEED = SHOOTER_SPEED_MIN
+        elif self.TARGET_SHOOTER_SPEED < MIN_FLYWHEEL_RPS:
+            self.TARGET_SHOOTER_SPEED = MIN_FLYWHEEL_RPS
 
-        print(f"shooter_speed_change +: {self.TARGET_SHOOTER_DUTY_CYCLE} ({speed_change})")
-        self._shooter.flywheel_spin(self.TARGET_SHOOTER_DUTY_CYCLE)
+        print(f"shooter_speed_change +: {self.TARGET_SHOOTER_SPEED} ({speed_change})")
+        self._shooter.flywheel_spin(self.TARGET_SHOOTER_SPEED)
