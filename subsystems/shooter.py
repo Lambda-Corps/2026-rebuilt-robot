@@ -53,15 +53,21 @@ class Shooter(Subsystem):
         self._shooter_flywheel: TalonFX = self.__configure_flywheel()
         self.intake_duty_cycle_out = controls.DutyCycleOut(0.0)
         self.flywheel_velocity_voltage = controls.VelocityVoltage(0.0)
-        self.indexer_duty_cycle_out = controls.DutyCycleOut(0.0)
+        self.indexer_velocity_voltage = controls.VelocityVoltage(0.0)
         self.counter = 0
 
         self.MOTOR_SPEED_GLOBAL = 50.0  # Initial speed
+        self.INDEXER_SPEED_GLOBAL = 0.0
 
     def __configure_indexer(self) -> TalonFX:
         talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
+        config.slot0.k_v = 0.18
+        config.slot0.k_s = -0.012
+        config.slot0.k_p = 0.2
+        config.slot0.k_i = 0  # leave for now
+        config.slot0.k_d = 0  # leave for now
         talon.configurator.apply(config)
 
         return talon
@@ -90,6 +96,10 @@ class Shooter(Subsystem):
         if abs(dashboard_rps - self.MOTOR_SPEED_GLOBAL) > 0.001:
             self.flywheel_spin(dashboard_rps)
 
+        dash_indexer_rps = wpilib.SmartDashboard.getNumber("Indexer RPS Requested", self.INDEXER_SPEED_GLOBAL)
+        if abs(dash_indexer_rps - self.INDEXER_SPEED_GLOBAL) > 0.001:
+            self.indexer_spin(dash_indexer_rps)
+
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
@@ -97,10 +107,16 @@ class Shooter(Subsystem):
         wpilib.SmartDashboard.putNumber("Flywheel RPS Requested", self.MOTOR_SPEED_GLOBAL)
         wpilib.SmartDashboard.putNumber("FlyWheel RPS Actual: ", round(velocity_value, 2))
 
+        indexer_vel = self._shooter_indexer.get_rotor_velocity()
+        indexer_vel.refresh()
+        wpilib.SmartDashboard.putNumber("Indexer RPS Requested", self.INDEXER_SPEED_GLOBAL)
+        wpilib.SmartDashboard.putNumber("Indexer RPS Actual: ", round(indexer_vel.value, 2))
+
     def indexer_spin(self, indexer_spinspeed: float) -> None:
-        self.indexer_duty_cycle_out.output = indexer_spinspeed
-        self._shooter_indexer.set_control(self.indexer_duty_cycle_out)
-        # wpilib.SmartDashboard.putNumber("Intake Speed: ", indexer_spinspeed)
+        self.INDEXER_SPEED_GLOBAL = indexer_spinspeed
+        self.indexer_velocity_voltage.velocity = self.INDEXER_SPEED_GLOBAL
+        self._shooter_indexer.set_control(self.indexer_velocity_voltage)
+        wpilib.SmartDashboard.putNumber("Indexer RPS Requested", self.INDEXER_SPEED_GLOBAL)
 
     def change_speed_variable_function(self, speed_update: float) -> None:
         new_speed = self.MOTOR_SPEED_GLOBAL + speed_update
