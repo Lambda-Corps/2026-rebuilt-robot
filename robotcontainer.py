@@ -24,7 +24,8 @@ from wpimath.units import rotationsToRadians
 from constants import (
     TARGET_SHOOTER_DATA,
     SHOOTER_SPEED_INCREMENT,
-    SHOOTER_SPEED_MIN,
+    MAX_FLYWHEEL_RPS,
+    MIN_FLYWHEEL_RPS,
     SHOOTER_SPEED_UP,
     SHOOTER_SPEED_RIGHT,
     SHOOTER_SPEED_DOWN,
@@ -33,10 +34,12 @@ from constants import (
     ROTATE_SPEED_REDUCTION,
     DEAD_ZONE,
     EXP_SCALING,
+    FLYWHEEL_RPS_DEFAULT,
     FLYWHEEL_CURVE_A,
     FLYWHEEL_CURVE_B,
     FLYWHEEL_CURVE_C,
     MIN_FLYWHEEL_RPS,
+    INDEXER_SPEED_DEFAULT,
 )
 
 from subsystems.ledsubsystem import LEDSubsystem
@@ -300,7 +303,7 @@ class RobotContainer:
 
         # Indexer controls
         self._partner_controller.leftBumper().whileTrue(
-            ControlIndexer(self._shooter, 0.6))
+            ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT))
         self._partner_controller.rightBumper().whileTrue(
             ControlIndexer(self._shooter, 0))
 
@@ -426,9 +429,9 @@ class RobotContainer:
 
     def configure_path_planner(self):
         # Named commands must be created before Autos can be defined
-        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, -50.0))
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, FLYWHEEL_RPS_DEFAULT))
         NamedCommands.registerCommand("startflywheelStop", ControlFlywheel(self._shooter, -0.0))
-        NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, 0.6))
+        NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT))
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
         NamedCommands.registerCommand("runIntake", ControlIntake(self._intake, 0.65, False))
         NamedCommands.registerCommand("stopIntake", ControlIntake(self._intake, 0, False))
@@ -452,8 +455,8 @@ class RobotContainer:
         self.TARGET_SHOOTER_SPEED = self.TARGET_SHOOTER_SPEED - speed_change
 
         # Clamp speeds
-        if self.TARGET_SHOOTER_SPEED > SHOOTER_SPEED_MIN:
-            self.TARGET_SHOOTER_SPEED = SHOOTER_SPEED_MIN
+        if self.TARGET_SHOOTER_SPEED > MAX_FLYWHEEL_RPS:
+            self.TARGET_SHOOTER_SPEED = MAX_FLYWHEEL_RPS
         elif self.TARGET_SHOOTER_SPEED < MIN_FLYWHEEL_RPS:
             self.TARGET_SHOOTER_SPEED = MIN_FLYWHEEL_RPS
 
