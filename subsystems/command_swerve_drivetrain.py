@@ -1,3 +1,17 @@
+# Re-characterizing in CTRE Phoenix Tuner X
+# Tuner X has built-in characterization tools for CTRE devices. Because tuner_constants.py was originally generated from a Tuner X project file (tuner-swerve-project.json):
+# STEPS
+# 1. Open Tuner X and load your existing project file
+# 2. Connect to your robot (requires the robot to be powered and on the same CAN bus/network)
+# 3. Use Tuner X's "Characterization" feature:
+#    - Automatically runs voltage ramps on each motor
+#    - Collects position/velocity data
+#    - Calculates kV, kS, kA directly
+# 4. Apply the gains and re-export the constants
+# 5. Regenerate tuner_constants.py either by:
+#    - Copying values manually from Tuner X to the Python file
+#    - Or using CTRE's "Export Project" feature to regenerate the file
+
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
 import math
