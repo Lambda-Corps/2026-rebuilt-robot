@@ -185,5 +185,5 @@ cython_debug/
 .DS_Store
 
 # Agents
-.claude/*
+.claude/
 gemini.md
