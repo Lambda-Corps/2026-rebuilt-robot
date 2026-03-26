@@ -35,9 +35,9 @@ from constants import (
     JOYSTICK_DEAD_ZONE,
     JOYSTICK_EXP_SCALING,
     SHOOTER_DEFAULT_RPS,
-    FLYWHEEL_CURVE_A,
-    FLYWHEEL_CURVE_B,
-    FLYWHEEL_CURVE_C,
+    SHOOTER_QUADRCOEF_A,
+    SHOOTER_QUADRCOEF_B,
+    SHOOTER_QUADRCOEF_C,
     SHOOTER_MIN_RPS,
     INDEXER_SPEED_DEFAULT,
     INTAKE_SPEED_DEFAULT,
@@ -371,12 +371,12 @@ class RobotContainer:
         """Return flywheel speed for a given distance using exponential fit: a + b*e^(-c*x),
         scaled by a voltage compensation multiplier."""
         ## Set 1
-        FLYWHEEL_CURVE_A = 1.052123
-        FLYWHEEL_CURVE_B = -0.8252849
-        FLYWHEEL_CURVE_C = 0.2009788
-        base_speed = (FLYWHEEL_CURVE_A + FLYWHEEL_CURVE_B * math.exp(-FLYWHEEL_CURVE_C * distance))
+        SHOOTER_QUADRCOEF_A = 1.052123
+        SHOOTER_QUADRCOEF_B = -0.8252849
+        SHOOTER_QUADRCOEF_C = 0.2009788
+        base_speed = (SHOOTER_QUADRCOEF_A + SHOOTER_QUADRCOEF_B * math.exp(-SHOOTER_QUADRCOEF_C * distance))
 
-        #base_speed = FLYWHEEL_CURVE_A * (distance ** 2) + FLYWHEEL_CURVE_B * distance + FLYWHEEL_CURVE_C
+        #base_speed = SHOOTER_QUADRCOEF_A * (distance ** 2) + SHOOTER_QUADRCOEF_B * distance + SHOOTER_QUADRCOEF_C
 
         if voltage is None:
             voltage = wpilib.RobotController.getBatteryVoltage()
