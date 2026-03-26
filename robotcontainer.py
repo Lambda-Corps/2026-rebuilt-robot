@@ -40,6 +40,7 @@ from constants import (
     FLYWHEEL_CURVE_C,
     MIN_FLYWHEEL_RPS,
     INDEXER_SPEED_DEFAULT,
+    INTAKE_SPEED_DEFAULT,
 )
 
 from subsystems.ledsubsystem import LEDSubsystem
@@ -271,9 +272,9 @@ class RobotContainer:
 
         # Intake controls
         self._partner_controller.x().onTrue(
-            ControlIntake(self._intake, 0.65, False))
+            ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False))
         self._partner_controller.y().onTrue(
-            ControlIntake(self._intake, 0.65, True))
+            ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, True))
         self._partner_controller.leftTrigger().whileTrue(
             ControlIntake(self._intake, 0, False))
 
@@ -433,7 +434,7 @@ class RobotContainer:
         NamedCommands.registerCommand("startflywheelStop", ControlFlywheel(self._shooter, -0.0))
         NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT))
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
-        NamedCommands.registerCommand("runIntake", ControlIntake(self._intake, 0.65, False))
+        NamedCommands.registerCommand("runIntake", ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False))
         NamedCommands.registerCommand("stopIntake", ControlIntake(self._intake, 0, False))
         NamedCommands.registerCommand("AutoAimStationaryContinuous", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0))
         NamedCommands.registerCommand("AutoAimStationary_2Sec", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(2.0))
