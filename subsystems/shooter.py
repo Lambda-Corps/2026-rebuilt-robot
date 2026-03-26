@@ -8,7 +8,7 @@ from utils.logger import (
     log_smartdashboard_number,
     log_smartdashboard_boolean,
 )
-from constants import MIN_FLYWHEEL_RPS, MAX_FLYWHEEL_RPS
+from constants import SHOOTER_MIN_RPS, SHOOTER_MAX_RPS
 from wpilib.simulation import FlywheelSim
 from wpimath.system.plant import DCMotor
 from phoenix6.configs import (
@@ -120,15 +120,15 @@ class Shooter(Subsystem):
 
     def change_speed_variable_function(self, speed_update: float) -> None:
         new_speed = self.MOTOR_SPEED_GLOBAL + speed_update
-        if MIN_FLYWHEEL_RPS <= new_speed <= MAX_FLYWHEEL_RPS:
+        if SHOOTER_MIN_RPS <= new_speed <= SHOOTER_MAX_RPS:
             self.MOTOR_SPEED_GLOBAL = new_speed
             self.flywheel_spin(self.MOTOR_SPEED_GLOBAL)
             print(f"Speed Changed {self.MOTOR_SPEED_GLOBAL:6.2f}")
-        elif new_speed <= MIN_FLYWHEEL_RPS:
-            self.MOTOR_SPEED_GLOBAL = MIN_FLYWHEEL_RPS
+        elif new_speed <= SHOOTER_MIN_RPS:
+            self.MOTOR_SPEED_GLOBAL = SHOOTER_MIN_RPS
             print("Lower Limit")
-        elif new_speed >= MAX_FLYWHEEL_RPS:
-            self.MOTOR_SPEED_GLOBAL = MAX_FLYWHEEL_RPS
+        elif new_speed >= SHOOTER_MAX_RPS:
+            self.MOTOR_SPEED_GLOBAL = SHOOTER_MAX_RPS
             print("Upper Limit")
 
     def is_shooter_spinning(self, thresholdPercent) -> bool :
