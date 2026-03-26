@@ -4,64 +4,54 @@
 # the WPILib BSD license file in the root directory of this project.
 #
 
-import math
-
-import commands2
-import commands2.cmd
-from commands2.button import CommandXboxController, Trigger
-from commands2.sysid import SysIdRoutine
-
-from generated.tuner_constants import TunerConstants
-from telemetry import Telemetry
-
-from pathplannerlib.auto import AutoBuilder, NamedCommands, PathPlannerAuto
-from phoenix6 import swerve
-from wpilib import DriverStation, SmartDashboard
-from wpimath.geometry import Rotation2d, Translation2d
-
-from utils.logger import log_debug, log_smartdashboard_string
-from wpimath.units import rotationsToRadians
 from constants import (
-    TARGET_SHOOTER_DATA,
-    SHOOTER_SPEED_INCREMENT,
-    SHOOTER_MAX_RPS,
+    SHOOTER_DEFAULT_RPS,
     SHOOTER_MIN_RPS,
+    SHOOTER_MAX_RPS,
     SHOOTER_SPEED_UP,
     SHOOTER_SPEED_RIGHT,
     SHOOTER_SPEED_DOWN,
     SHOOTER_SPEED_LEFT,
+    SHOOTER_SPEED_INCREMENT,
+    SHOOTER_X_OFFSET_INCHES,
+    INDEXER_SPEED_DEFAULT,
+    INTAKE_SPEED_DEFAULT,
     MOVE_SPEED_REDUCTION,
     ROTATE_SPEED_REDUCTION,
     JOYSTICK_DEAD_ZONE,
     JOYSTICK_EXP_SCALING,
-    SHOOTER_DEFAULT_RPS,
-    SHOOTER_QUADRCOEF_A,
-    SHOOTER_QUADRCOEF_B,
-    SHOOTER_QUADRCOEF_C,
-    SHOOTER_MIN_RPS,
-    INDEXER_SPEED_DEFAULT,
-    INTAKE_SPEED_DEFAULT,
 )
 
-from subsystems.ledsubsystem import LEDSubsystem
-from commands.ledcommand import LEDCommand
+import commands2
+import commands2.cmd
+import math
+import wpilib
 
+from commands.flywheelCommand import ControlFlywheel
 from commands.indexerCommand import ControlIndexer
 from commands.intakeCommand import ControlIntake
-from commands.flywheelCommand import ControlFlywheel
+from commands.ledcommand import LEDCommand
+from commands2.button import CommandXboxController, Trigger
+from commands2.sysid import SysIdRoutine
 
-from subsystems.shooter import Shooter
+from generated.tuner_constants import TunerConstants
+from pathplannerlib.auto import AutoBuilder, NamedCommands
+from phoenix6 import swerve
+from telemetry import Telemetry
+from wpilib import DriverStation, LiveWindow, SmartDashboard
+from wpimath.geometry import Rotation2d, Translation2d
+from wpimath.units import rotationsToRadians
 
 from subsystems.intake import Intake
-
-from commands.LEDrainbow import LEDrainbow
-
+from subsystems.ledsubsystem import LEDSubsystem
+from subsystems.shooter import Shooter
 from subsystems.VisionSubsystem import VisionSubsystem
+from utils.logger import log_debug, log_smartdashboard_string
 
 # ================================================================
 # DF: Added to quiet Console log
-import wpilib
-from wpilib import LiveWindow
+
+
 # ================================================================
 
 
@@ -156,6 +146,15 @@ class RobotContainer:
             _field_length = 17.548  # fallback: 2025 Reefscape field length (m)
         self._BLUE_TOWER = Translation2d(_tower_x_blue, _tower_y)
         self._RED_TOWER = Translation2d(_tower_x_red, _tower_y)
+
+        # Placeholder coordinates for the secondary targets to aim at when out of the "alliance area"
+        # Update these coordinates to point to the actual desired field locations
+        ALT_TARGET_X_OFFSET = 2.5
+        ALT_TARGET_Y_OFFSET = 2.0
+        self._BLUE_SECONDARY_TARGET_A = Translation2d(_tower_x_blue - ALT_TARGET_X_OFFSET, _tower_y + ALT_TARGET_Y_OFFSET)
+        self._BLUE_SECONDARY_TARGET_B = Translation2d(_tower_x_blue - ALT_TARGET_X_OFFSET, _tower_y - ALT_TARGET_Y_OFFSET)
+        self._RED_SECONDARY_TARGET_A = Translation2d(_tower_x_red + ALT_TARGET_X_OFFSET, _tower_y + ALT_TARGET_Y_OFFSET)
+        self._RED_SECONDARY_TARGET_B = Translation2d(_tower_x_red + ALT_TARGET_X_OFFSET, _tower_y - ALT_TARGET_Y_OFFSET)
 
         self._logger = Telemetry(self._max_speed)
         self._driver_controller = CommandXboxController(0)
@@ -255,8 +254,8 @@ class RobotContainer:
         # Auto-aim at tower
         # Right trigger: hold to auto-rotate toward the alliance tower.
         # Translation (left stick) still works normally while held.
-        (self._driver_controller.rightTrigger(0.04) | self._partner_controller.rightTrigger(0.05)).whileTrue(
-            self.auto_aim_and_distance_shooter(teleop_vel_x, teleop_vel_y))
+        (self._driver_controller.rightTrigger(0.05) | self._partner_controller.rightTrigger(0.05)
+            ).whileTrue(self.auto_aim_and_distance_shooter(teleop_vel_x, teleop_vel_y))
 
         # Sim "driver" controls
         self._driver_controller.a().onTrue(
@@ -314,6 +313,22 @@ class RobotContainer:
         self.drivetrain.register_telemetry(
             lambda state: self._logger.telemeterize(state))
 
+        # This allows on-demand characterization of the drivetrain without Phoenix Tuner X, but requires you to copy values from logs to tuner_constants.py
+        # Run SysId routines when holding back/start and X/Y.
+        # Note that each routine should be run exactly once in a single log.
+        (self._driver_controller.back() & self._driver_controller.y()).whileTrue(
+            self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
+        )
+        (self._driver_controller.back() & self._driver_controller.x()).whileTrue(
+            self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
+        )
+        (self._driver_controller.start() & self._driver_controller.y()).whileTrue(
+            self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
+        )
+        (self._driver_controller.start() & self._driver_controller.x()).whileTrue(
+            self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
+        )
+
     def _toggle_drive_mode(self) -> None:
         """Toggle between RobotCentric and FieldCentric drive modes."""
         self.IS_FIELD_CENTRIC = not self.IS_FIELD_CENTRIC
@@ -321,8 +336,23 @@ class RobotContainer:
         log_smartdashboard_string("Drive Mode", mode_name, min_verbosity=1)
         log_debug(f"Drive mode switched to: {mode_name}", min_verbosity=1)
 
+    def apply_deadzone_and_curve(
+        self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
+    ) -> float:
+        if abs(axis_value) < deadzone:
+            return 0.0
+        # Normalize to 0-1 range after deadzone
+        normalized = (abs(axis_value) - deadzone) / (1.0 - deadzone)
+        # Apply curve (e.g., square for smoother ramp)
+        curved = normalized**exponent
+        # Reapply sign
+        final = curved * (1 if axis_value > 0 else -1)
+        return final
+
     def _get_tower_direction(self) -> Rotation2d:
-        """Return the field-relative angle from the robot's predicted pose to its alliance tower.
+        """Return the field-relative angle from the robot's predicted pose to its target.
+        If the robot is between its alliance wall and the tower, it targets the tower.
+        Otherwise, it targets the alliance-specific secondary target.
 
         Uses velocity-based lookahead to compensate for heading PID lag
         during lateral motion.  Tunable range: 0.04–0.12 s.
@@ -333,11 +363,24 @@ class RobotContainer:
         pose = state.pose
         speeds = state.speeds  # ChassisSpeeds (robot-relative vx, vy, omega)
 
-        tower = (
-            self._RED_TOWER
-            if DriverStation.getAlliance() == DriverStation.Alliance.kRed
-            else self._BLUE_TOWER
-        )
+        is_red = DriverStation.getAlliance() == DriverStation.Alliance.kRed
+
+        # Determine if we are in the "alliance area" (between driver station and tower)
+        # Blue driver station is at x=0; Red driver station is at x ~ field_length
+        if is_red:
+            in_alliance_area = pose.x > self._RED_TOWER.x
+        else:
+            in_alliance_area = pose.x < self._BLUE_TOWER.x
+
+        if in_alliance_area:
+            # Target our aliance tower
+            target = self._RED_TOWER if is_red else self._BLUE_TOWER
+        else:
+            # Depending on robot Y, target SECONDARY target A or B (the same side the robot is on)
+            if pose.y >= self._BLUE_TOWER.y:
+                target = self._RED_SECONDARY_TARGET_A if is_red else self._BLUE_SECONDARY_TARGET_A
+            else:
+                target = self._RED_SECONDARY_TARGET_B if is_red else self._BLUE_SECONDARY_TARGET_B
 
         # ChassisSpeeds are robot-relative; rotate into field frame
         heading = pose.rotation().radians()
@@ -348,21 +391,21 @@ class RobotContainer:
         pred_x = pose.x + field_vx * LOOKAHEAD_S
         pred_y = pose.y + field_vy * LOOKAHEAD_S
 
-        angle = math.atan2(tower.y - pred_y, tower.x - pred_x)
+        angle = math.atan2(target.y - pred_y, target.x - pred_x)
 
-        # Because of the rotation that is automatically applied based on aliance, we need to add 180 degrees (pi radians) to the angle when on the red alliance to ensure the robot faces the tower (not backend facing).
-        if DriverStation.getAlliance() == DriverStation.Alliance.kRed:
+        # Because of the rotation that is automatically applied based on aliance, we need to add 180 degrees (pi radians) to the angle when on the red alliance to ensure the robot faces the target (not backend facing).
+        if is_red:
             angle += math.pi
 
-        # Distance from the back of the robot to the tower
-        BACK_OFFSET = 12 * 0.0254  # 12 inches behind center (wheel line)
-        back_x = pose.x - BACK_OFFSET * math.cos(heading)
-        back_y = pose.y - BACK_OFFSET * math.sin(heading)
+        # Distance from the back of the robot to the target
+        BACK_OFFSET_METERS = SHOOTER_X_OFFSET_INCHES * 0.0254  # inches behind center (wheel line)
+        back_x = pose.x # - BACK_OFFSET_METERS * math.cos(heading)
+        back_y = pose.y # - BACK_OFFSET_METERS * math.sin(heading)
         self._target_distance = math.sqrt(
-            (tower.x - back_x) ** 2 + (tower.y - back_y) ** 2
-        )
+            (target.x - back_x) ** 2 + (target.y - back_y) ** 2
+        ) + BACK_OFFSET_METERS
         SmartDashboard.putNumber(
-            "TargetDistance", round(self._target_distance * 3.28084, 2)
+            "TargetDistanceMeters", round(self._target_distance, 2)
         )
 
         return Rotation2d(angle)
@@ -387,19 +430,6 @@ class RobotContainer:
 
         # Curve outputs DutyCycle approximation (e.g. 0.5 to 1.0). Convert to approx RPS by multiplying by 100.
         return (base_speed * 100.0) * multiplier
-
-    def apply_deadzone_and_curve(
-        self, axis_value: float, deadzone: float = 0.1, exponent: float = 2.0
-    ) -> float:
-        if abs(axis_value) < deadzone:
-            return 0.0
-        # Normalize to 0-1 range after deadzone
-        normalized = (abs(axis_value) - deadzone) / (1.0 - deadzone)
-        # Apply curve (e.g., square for smoother ramp)
-        curved = normalized**exponent
-        # Reapply sign
-        final = curved * (1 if axis_value > 0 else -1)
-        return final
 
     def auto_aim_and_distance_shooter(self, velocity_x_supplier, velocity_y_supplier) -> commands2.Command:
         """
