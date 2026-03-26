@@ -24,21 +24,21 @@ from wpimath.units import rotationsToRadians
 from constants import (
     TARGET_SHOOTER_DATA,
     SHOOTER_SPEED_INCREMENT,
-    MAX_FLYWHEEL_RPS,
-    MIN_FLYWHEEL_RPS,
+    SHOOTER_MAX_RPS,
+    SHOOTER_MIN_RPS,
     SHOOTER_SPEED_UP,
     SHOOTER_SPEED_RIGHT,
     SHOOTER_SPEED_DOWN,
     SHOOTER_SPEED_LEFT,
     MOVE_SPEED_REDUCTION,
     ROTATE_SPEED_REDUCTION,
-    DEAD_ZONE,
-    EXP_SCALING,
-    FLYWHEEL_RPS_DEFAULT,
+    JOYSTICK_DEAD_ZONE,
+    JOYSTICK_EXP_SCALING,
+    SHOOTER_DEFAULT_RPS,
     FLYWHEEL_CURVE_A,
     FLYWHEEL_CURVE_B,
     FLYWHEEL_CURVE_C,
-    MIN_FLYWHEEL_RPS,
+    SHOOTER_MIN_RPS,
     INDEXER_SPEED_DEFAULT,
     INTAKE_SPEED_DEFAULT,
 )
@@ -203,7 +203,7 @@ class RobotContainer:
                     .with_velocity_x(
                         # -self._driver_controller.getLeftY() * self._max_speed  * MOVE_SPEED_REDUCTION
                         -self.apply_deadzone_and_curve(
-                            self._driver_controller.getLeftY(), DEAD_ZONE, EXP_SCALING
+                            self._driver_controller.getLeftY(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
                         )
                         * self._max_speed
                         * MOVE_SPEED_REDUCTION
@@ -212,7 +212,7 @@ class RobotContainer:
                     .with_velocity_y(
                         # -self._driver_controller.getLeftX() * self._max_speed * MOVE_SPEED_REDUCTION
                         -self.apply_deadzone_and_curve(
-                            self._driver_controller.getLeftX(), DEAD_ZONE, EXP_SCALING
+                            self._driver_controller.getLeftX(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
                         )
                         * self._max_speed
                         * MOVE_SPEED_REDUCTION
@@ -223,8 +223,8 @@ class RobotContainer:
                             self._driver_controller.getRawAxis(2)
                             if wpilib.RobotBase.isSimulation()
                             else self._driver_controller.getRightX(),
-                            DEAD_ZONE,
-                            EXP_SCALING,
+                            JOYSTICK_DEAD_ZONE,
+                            JOYSTICK_EXP_SCALING,
                         )
                         * self._max_angular_rate
                         * ROTATE_SPEED_REDUCTION
@@ -246,10 +246,10 @@ class RobotContainer:
         
         # These methods are passed to the auto-aim and distance shooter command
         teleop_vel_x = lambda: -self.apply_deadzone_and_curve(
-            self._driver_controller.getLeftY(), DEAD_ZONE, EXP_SCALING
+            self._driver_controller.getLeftY(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
         ) * self._max_speed * MOVE_SPEED_REDUCTION
         teleop_vel_y = lambda: -self.apply_deadzone_and_curve(
-            self._driver_controller.getLeftX(), DEAD_ZONE, EXP_SCALING
+            self._driver_controller.getLeftX(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
         ) * self._max_speed * MOVE_SPEED_REDUCTION
 
         # Auto-aim at tower
@@ -430,7 +430,7 @@ class RobotContainer:
 
     def configure_path_planner(self):
         # Named commands must be created before Autos can be defined
-        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, FLYWHEEL_RPS_DEFAULT))
+        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, SHOOTER_DEFAULT_RPS))
         NamedCommands.registerCommand("startflywheelStop", ControlFlywheel(self._shooter, -0.0))
         NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT))
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
@@ -456,10 +456,10 @@ class RobotContainer:
         self.TARGET_SHOOTER_SPEED = self.TARGET_SHOOTER_SPEED - speed_change
 
         # Clamp speeds
-        if self.TARGET_SHOOTER_SPEED > MAX_FLYWHEEL_RPS:
-            self.TARGET_SHOOTER_SPEED = MAX_FLYWHEEL_RPS
-        elif self.TARGET_SHOOTER_SPEED < MIN_FLYWHEEL_RPS:
-            self.TARGET_SHOOTER_SPEED = MIN_FLYWHEEL_RPS
+        if self.TARGET_SHOOTER_SPEED > SHOOTER_MAX_RPS:
+            self.TARGET_SHOOTER_SPEED = SHOOTER_MAX_RPS
+        elif self.TARGET_SHOOTER_SPEED < SHOOTER_MIN_RPS:
+            self.TARGET_SHOOTER_SPEED = SHOOTER_MIN_RPS
 
         print(f"shooter_speed_change +: {self.TARGET_SHOOTER_SPEED} ({speed_change})")
         self._shooter.flywheel_spin(self.TARGET_SHOOTER_SPEED)
