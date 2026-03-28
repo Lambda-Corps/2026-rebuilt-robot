@@ -16,10 +16,13 @@ from constants import (
     SHOOTER_X_OFFSET_INCHES,
     INDEXER_SPEED_DEFAULT,
     INTAKE_SPEED_DEFAULT,
-    MOVE_SPEED_REDUCTION,
-    ROTATE_SPEED_REDUCTION,
+    MOVE_SPEED_COEFF,
+    ROTATE_SPEED_COEFF,
     JOYSTICK_DEAD_ZONE,
     JOYSTICK_EXP_SCALING,
+    SHOOTER_QUADRCOEF_A,
+    SHOOTER_QUADRCOEF_B,
+    SHOOTER_QUADRCOEF_C
 )
 
 import commands2
@@ -149,8 +152,8 @@ class RobotContainer:
 
         # Placeholder coordinates for the secondary targets to aim at when out of the "alliance area"
         # Update these coordinates to point to the actual desired field locations
-        ALT_TARGET_X_OFFSET = 2.5
-        ALT_TARGET_Y_OFFSET = 2.0
+        ALT_TARGET_X_OFFSET = 1.0
+        ALT_TARGET_Y_OFFSET = 1.0
         self._BLUE_SECONDARY_TARGET_A = Translation2d(_tower_x_blue - ALT_TARGET_X_OFFSET, _tower_y + ALT_TARGET_Y_OFFSET)
         self._BLUE_SECONDARY_TARGET_B = Translation2d(_tower_x_blue - ALT_TARGET_X_OFFSET, _tower_y - ALT_TARGET_Y_OFFSET)
         self._RED_SECONDARY_TARGET_A = Translation2d(_tower_x_red + ALT_TARGET_X_OFFSET, _tower_y + ALT_TARGET_Y_OFFSET)
@@ -200,34 +203,32 @@ class RobotContainer:
                         else self._drive_robot_centric
                     )
                     .with_velocity_x(
-                        # -self._driver_controller.getLeftY() * self._max_speed  * MOVE_SPEED_REDUCTION
+                        # -self._driver_controller.getLeftY() * self._max_speed  * MOVE_SPEED_COEFF
                         -self.apply_deadzone_and_curve(
                             self._driver_controller.getLeftY(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
                         )
                         * self._max_speed
-                        * MOVE_SPEED_REDUCTION
+                        * MOVE_SPEED_COEFF
                         #### DF:  Updated:  Negated
                     )  # Drive forward with negative Y (forward)
                     .with_velocity_y(
-                        # -self._driver_controller.getLeftX() * self._max_speed * MOVE_SPEED_REDUCTION
+                        # -self._driver_controller.getLeftX() * self._max_speed * MOVE_SPEED_COEFF
                         -self.apply_deadzone_and_curve(
                             self._driver_controller.getLeftX(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
                         )
                         * self._max_speed
-                        * MOVE_SPEED_REDUCTION
+                        * MOVE_SPEED_COEFF
                     )  # Drive left with negative X (left)
                     .with_rotational_rate(
-                        # -self._driver_controller.getRightX() * self._max_angular_rate    #### DF:  Original
                         -self.apply_deadzone_and_curve(
-                            self._driver_controller.getRawAxis(2)
-                            if wpilib.RobotBase.isSimulation()
-                            else self._driver_controller.getRightX(),
+                            self._driver_controller.getRightX() 
+                                if not wpilib.RobotBase.isSimulation()
+                                else self._driver_controller.getRawAxis(2),
                             JOYSTICK_DEAD_ZONE,
                             JOYSTICK_EXP_SCALING,
                         )
                         * self._max_angular_rate
-                        * ROTATE_SPEED_REDUCTION
-                        #### DF:  Updated:  Negated
+                        * ROTATE_SPEED_COEFF
                     )  # Drive counterclockwise with negative X (left)
                 )
             )
@@ -246,16 +247,18 @@ class RobotContainer:
         # These methods are passed to the auto-aim and distance shooter command
         teleop_vel_x = lambda: -self.apply_deadzone_and_curve(
             self._driver_controller.getLeftY(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
-        ) * self._max_speed * MOVE_SPEED_REDUCTION
+        ) * self._max_speed * MOVE_SPEED_COEFF
         teleop_vel_y = lambda: -self.apply_deadzone_and_curve(
             self._driver_controller.getLeftX(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
-        ) * self._max_speed * MOVE_SPEED_REDUCTION
+        ) * self._max_speed * MOVE_SPEED_COEFF
 
         # Auto-aim at tower
         # Right trigger: hold to auto-rotate toward the alliance tower.
         # Translation (left stick) still works normally while held.
-        (self._driver_controller.rightTrigger(0.05) | self._partner_controller.rightTrigger(0.05)
-            ).whileTrue(self.auto_aim_and_distance_shooter(teleop_vel_x, teleop_vel_y))
+        (
+            self._partner_controller.rightTrigger(0.05) # Hardware
+            | (Trigger(wpilib.RobotBase.isSimulation) & Trigger(lambda: self._driver_controller.getRawAxis(5) > JOYSTICK_DEAD_ZONE)) # Simulation using Xbox controller
+        ).whileTrue(self.auto_aim_and_distance_shooter(teleop_vel_x, teleop_vel_y))
 
         # Sim "driver" controls
         self._driver_controller.a().onTrue(
@@ -411,25 +414,15 @@ class RobotContainer:
         return Rotation2d(angle)
 
     def _flywheel_speed_from_distance(self, distance: float, voltage: float = None) -> float:
-        """Return flywheel speed for a given distance using exponential fit: a + b*e^(-c*x),
+        """Return flywheel speed for a given distance using quadratic fit: a*x^2 + b*x + c,
         scaled by a voltage compensation multiplier."""
-        ## Set 1
-        SHOOTER_QUADRCOEF_A = 1.052123
-        SHOOTER_QUADRCOEF_B = -0.8252849
-        SHOOTER_QUADRCOEF_C = 0.2009788
-        base_speed = (SHOOTER_QUADRCOEF_A + SHOOTER_QUADRCOEF_B * math.exp(-SHOOTER_QUADRCOEF_C * distance))
-
-        #base_speed = SHOOTER_QUADRCOEF_A * (distance ** 2) + SHOOTER_QUADRCOEF_B * distance + SHOOTER_QUADRCOEF_C
+        base_speed = SHOOTER_QUADRCOEF_A * (distance ** 2) + SHOOTER_QUADRCOEF_B * distance + SHOOTER_QUADRCOEF_C
 
         if voltage is None:
             voltage = wpilib.RobotController.getBatteryVoltage()
 
-        # Linear scale: 12.5V -> 1.0, 11.8V -> 1.08
-        # multiplier set to 1 to effectively disable voltage compensation while tuning the shooter
-        multiplier = 1 # 1.0 + ((12.5 - voltage) / 0.7) * 0.08
-
-        # Curve outputs DutyCycle approximation (e.g. 0.5 to 1.0). Convert to approx RPS by multiplying by 100.
-        return (base_speed * 100.0) * multiplier
+        # Curve outputs target RPS cleanly now. 
+        return base_speed
 
     def auto_aim_and_distance_shooter(self, velocity_x_supplier, velocity_y_supplier) -> commands2.Command:
         """
@@ -445,7 +438,7 @@ class RobotContainer:
             ),
             commands2.cmd.run(
                 lambda: self._shooter.flywheel_spin(
-                    -self._flywheel_speed_from_distance(self._target_distance)
+                    self._flywheel_speed_from_distance(self._target_distance)
                 ),
                 self._shooter,
             )
@@ -466,7 +459,7 @@ class RobotContainer:
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
         NamedCommands.registerCommand("runIntake", ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False))
         NamedCommands.registerCommand("stopIntake", ControlIntake(self._intake, 0, False))
-        NamedCommands.registerCommand("AutoAimStationaryContinuous", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0))
+        NamedCommands.registerCommand("AutoAimStationary", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0))
         NamedCommands.registerCommand("AutoAimStationary_2Sec", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(2.0))
         NamedCommands.registerCommand("VisionReseed", commands2.cmd.runOnce(self._attempt_vision_seed))
         # Build an auto chooser. This will use Commands.none() as the default option.
