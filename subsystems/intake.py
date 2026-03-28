@@ -23,8 +23,8 @@ class Intake(Subsystem):
     def __init__(self):
         super().__init__()
         self._intake_motor: TalonFX = self.__configure_intake()  # Instantiate motor
-        self.intake_velocity_voltage = controls.VelocityVoltage(0.0)
-        self.motor_speed_global = 0.0  # Initial speed
+        self.intake_duty_cycle_out = controls.DutyCycleOut(0.0)  # Instantiate speed control object
+        self.motor_speed_global = 1  # Initial speed
         self.intake_enabled = False
         self.intake_reversed = False
 
@@ -32,59 +32,35 @@ class Intake(Subsystem):
         talon = TalonFX(30, "" if utils.is_simulation() else "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
-        config.slot0.k_v = 0.18
-        config.slot0.k_s = -0.012
-        config.slot0.k_p = 0.2
-        config.slot0.k_i = 0
-        config.slot0.k_d = 0
         talon.configurator.apply(config)
         return talon
     
     def periodic(self) -> None:
-        dashboard_rps = wpilib.SmartDashboard.getNumber("Intake RPS Requested", self.motor_speed_global)
-        
-        # Determine current requested sign since it could be negative if reversed
-        current_requested = self.motor_speed_global * (-1 if self.intake_reversed else 1)
-        if not self.intake_enabled:
-            current_requested = 0.0
-            
-        if abs(dashboard_rps - current_requested) > 0.001:
-            if dashboard_rps < 0:
-                self.enable_intake(abs(dashboard_rps), True)
-            elif dashboard_rps > 0:
-                self.enable_intake(dashboard_rps, False)
-            else:
-                self.enable_intake(0.0, False)
-
+        # Get the Velocity of the wheel in Rotations per second    
         rotor_velocity = self._intake_motor.get_rotor_velocity()     # Get the Intake speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
-        
-        current_out = self.motor_speed_global * (-1 if self.intake_reversed else 1) if self.intake_enabled else 0.0
-        wpilib.SmartDashboard.putNumber("Intake RPS Requested", current_out)
-        wpilib.SmartDashboard.putNumber("Intake RPS Actual: ", round(velocity_value, 2))
+        wpilib.SmartDashboard.putNumber("Intake Speed: ", velocity_value)
 
     def intake_speed_global_control(self) -> None:
         #print("Global Control Ran~")  
         if (self.intake_enabled and not self.intake_reversed):                                         # Global control of intake speed
-            self.intake_velocity_voltage.velocity = self.motor_speed_global    # Speed set by global variable
-            self._intake_motor.set_control(self.intake_velocity_voltage)
+            self.intake_duty_cycle_out.output = self.motor_speed_global    # Speed set by global variable
+            self._intake_motor.set_control(self.intake_duty_cycle_out)
         elif (self.intake_enabled and self.intake_reversed):
-            self.intake_velocity_voltage.velocity = self.motor_speed_global * -1
-            self._intake_motor.set_control(self.intake_velocity_voltage)
+            self.intake_duty_cycle_out.output = self.motor_speed_global * -1
+            self._intake_motor.set_control(self.intake_duty_cycle_out)
         else:
-            self.intake_velocity_voltage.velocity = 0           # Speed set by global variable
-            self._intake_motor.set_control(self.intake_velocity_voltage)
+            self.intake_duty_cycle_out.output = 0           # Speed set by global variable
+            self._intake_motor.set_control(self.intake_duty_cycle_out)
 
     # def change_speed_variable_function(self, speed_update : float) -> None:
     #     if ((self.motor_speed_global > -1 ) and (self.motor_speed_global < 1)):
     #         self.motor_speed_global = self.motor_speed_global + speed_update
     #     #print (f">>>>> self.motor_speed_global {self.motor_speed_global}   Subsystem")
 
-    def enable_intake(self, speed, reverse):
-        self.intake_enabled  = speed != 0
-        if speed != 0:
-            self.motor_speed_global = speed
+    def enable_intake(self, enable, reverse):
+        self.intake_enabled  = enable
         self.intake_reversed = reverse
         #print (f">>>> self.intake_enabled {self.intake_enabled}")
         self.intake_speed_global_control()
