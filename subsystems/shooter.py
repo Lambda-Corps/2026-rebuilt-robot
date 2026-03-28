@@ -63,7 +63,7 @@ class Shooter(Subsystem):
         talon = TalonFX(21, "" if utils.is_simulation() else "canivore1")
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
-        config.slot0.k_v = 0.18
+        config.slot0.k_v = 0.12
         config.slot0.k_s = -0.012
         config.slot0.k_p = 0.2
         config.slot0.k_i = 0  # leave for now
@@ -76,7 +76,7 @@ class Shooter(Subsystem):
         talon = TalonFX(20, "" if utils.is_simulation() else "canivore1")     # CAN Bus Address
         config: TalonFXConfiguration = TalonFXConfiguration()
         config.motor_output.neutral_mode = NeutralModeValue.COAST
-        config.slot0.k_v = 0.18
+        config.slot0.k_v = 0.12
         config.slot0.k_s = -0.012
         config.slot0.k_p = 0.2
         config.slot0.k_i = 0  # leave for now
