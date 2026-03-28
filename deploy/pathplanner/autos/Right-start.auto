@@ -5,27 +5,21 @@
     "data": {
       "commands": [
         {
-          "type": "named",
-          "data": {
-            "name": "VisionReseed"
-          }
-        },
-        {
           "type": "path",
           "data": {
             "pathName": "right-to-right-shoot"
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "VisionReseed"
+          }
+        },
+        {
           "type": "sequential",
           "data": {
             "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "VisionReseed"
-                }
-              },
               {
                 "type": "named",
                 "data": {
