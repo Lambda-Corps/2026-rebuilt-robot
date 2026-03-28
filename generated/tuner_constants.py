@@ -83,7 +83,7 @@ class TunerConstants:
 
     _drive_gear_ratio = 6.48
     _steer_gear_ratio = 12.1
-    _wheel_radius: units.meter = inchesToMeters(4)
+    _wheel_radius: units.meter = inchesToMeters(2)
 
     _invert_left_side = False
     _invert_right_side = True
