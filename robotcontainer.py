@@ -18,6 +18,7 @@ from constants import (
     INTAKE_SPEED_DEFAULT,
     MOVE_SPEED_COEFF,
     ROTATE_SPEED_COEFF,
+    MOVE_MAX_ANGULAR_RATE,
     JOYSTICK_DEAD_ZONE,
     JOYSTICK_EXP_SCALING,
     SHOOTER_QUADRCOEF_A,
@@ -97,7 +98,7 @@ class RobotContainer:
             TunerConstants.speed_at_12_volts
         )  # speed_at_12_volts desired top speed
         self._max_angular_rate = rotationsToRadians(
-            0.85
+            MOVE_MAX_ANGULAR_RATE
         )  # 3/4 of a rotation per second max angular velocity
 
         # Setting up bindings for necessary control of the swerve drive platform

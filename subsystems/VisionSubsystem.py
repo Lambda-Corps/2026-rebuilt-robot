@@ -7,6 +7,13 @@ from wpimath.geometry import Rotation3d, Transform3d, Translation3d
 
 from wpilib import RobotBase
 
+from constants import (
+    POSE_AMBIGUITY_THRESHOLD,
+    CAMERA_NAME,
+    ROBOT_TO_CAMERA,
+    _SIM_UPDATE_PERIOD,
+)
+
 try:
     from photonlibpy.photonCamera import PhotonCamera
     from photonlibpy.photonPoseEstimator import PhotonPoseEstimator
@@ -19,16 +26,6 @@ try:
 except Exception:
     AprilTagField = None  # type: ignore[assignment,misc]
     AprilTagFieldLayout = None  # type: ignore[assignment,misc]
-
-
-CAMERA_NAME = "OV9281"
-AMBIGUITY_THRESHOLD = 0.4
-ROBOT_TO_CAMERA = Transform3d(
-    Translation3d(0.3, 0.0, 0.5),
-    Rotation3d(0.0, math.radians(-15), 0.0),
-)
-_SIM_UPDATE_PERIOD = 0.04
-
 
 def _compute_std_devs(estimated) -> tuple:
     """Scale measurement uncertainty by tag count and average distance."""
@@ -55,7 +52,7 @@ def _compute_std_devs(estimated) -> tuple:
 
 class VisionSubsystem(commands2.Subsystem):
     CAMERA_NAME = CAMERA_NAME
-    AMBIGUITY_THRESHOLD = AMBIGUITY_THRESHOLD
+    POSE_AMBIGUITY_THRESHOLD = POSE_AMBIGUITY_THRESHOLD
     ROBOT_TO_CAMERA = ROBOT_TO_CAMERA
     _SIM_UPDATE_PERIOD = _SIM_UPDATE_PERIOD
 
@@ -133,7 +130,7 @@ class VisionSubsystem(commands2.Subsystem):
         if not multi_tag:
             # Single-tag: reject ambiguous poses (two equally-valid mirror solutions)
             best = result.getBestTarget()
-            if best is not None and best.getPoseAmbiguity() > self.AMBIGUITY_THRESHOLD:
+            if best is not None and best.getPoseAmbiguity() > self.POSE_AMBIGUITY_THRESHOLD:
                 return
 
         # Multi-tag PnP is unambiguous; fall back to best single-tag only if needed
