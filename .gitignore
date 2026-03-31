@@ -187,3 +187,6 @@ cython_debug/
 # Agents
 .claude/
 gemini.md
+
+# Sim files that change on every system/run
+simgui-ds.json
