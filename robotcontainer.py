@@ -21,6 +21,7 @@ from constants import (
     MOVE_MAX_ANGULAR_RATE,
     JOYSTICK_DEAD_ZONE,
     JOYSTICK_EXP_SCALING,
+    TELEOP_MIN_INPUT_RESPONSE_TIME,
     SHOOTER_QUADRCOEF_A,
     SHOOTER_QUADRCOEF_B,
     SHOOTER_QUADRCOEF_C
@@ -47,6 +48,7 @@ import phoenix6
 from phoenix6 import swerve
 from telemetry import Telemetry
 from wpilib import DriverStation, LiveWindow, SmartDashboard
+from wpimath.filter import SlewRateLimiter
 from wpimath.geometry import Rotation2d, Translation2d
 from wpimath.units import rotationsToRadians
 
@@ -108,6 +110,13 @@ class RobotContainer:
         self._max_angular_rate = rotationsToRadians(
             MOVE_MAX_ANGULAR_RATE
         )  # 3/4 of a rotation per second max angular velocity
+
+        # Slew rate limiters for teleop drive to reduce mechanical shock.
+        # Limits the rate of change of joystick inputs (0 to 1) over minimum response ms
+        rate_limit = 1.0 / TELEOP_MIN_INPUT_RESPONSE_TIME
+        self._x_limiter = SlewRateLimiter(rate_limit)
+        self._y_limiter = SlewRateLimiter(rate_limit)
+        self._rot_limiter = SlewRateLimiter(rate_limit)
 
         # Setting up bindings for necessary control of the swerve drive platform
         self._drive_robot_centric = (
@@ -192,6 +201,28 @@ class RobotContainer:
     def getAutonomousCommand():
         return self.autoChooser.getSelected()
 
+    def _get_forward_velocity(self) -> float:
+        v = self.apply_deadzone_and_curve(
+            self._driver_controller.getLeftY(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
+        )
+        return -self._x_limiter.calculate(v) * self._max_speed * MOVE_SPEED_COEFF
+
+    def _get_left_velocity(self) -> float:
+        v = self.apply_deadzone_and_curve(
+            self._driver_controller.getLeftX(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
+        )
+        return -self._y_limiter.calculate(v) * self._max_speed * MOVE_SPEED_COEFF
+
+    def _get_rotation_velocity(self) -> float:
+        v = self.apply_deadzone_and_curve(
+            self._driver_controller.getRightX() 
+                if not wpilib.RobotBase.isSimulation()
+                else self._driver_controller.getRawAxis(2),
+            JOYSTICK_DEAD_ZONE,
+            JOYSTICK_EXP_SCALING,
+        )
+        return -self._rot_limiter.calculate(v) * self._max_angular_rate * ROTATE_SPEED_COEFF
+
     def configureButtonBindings(self) -> None:
         """
         Use this method to define your button->command mappings. Buttons can be created by
@@ -212,34 +243,9 @@ class RobotContainer:
                         if self.IS_FIELD_CENTRIC
                         else self._drive_robot_centric
                     )
-                    .with_velocity_x(
-                        # -self._driver_controller.getLeftY() * self._max_speed  * MOVE_SPEED_COEFF
-                        -self.apply_deadzone_and_curve(
-                            self._driver_controller.getLeftY(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
-                        )
-                        * self._max_speed
-                        * MOVE_SPEED_COEFF
-                        #### DF:  Updated:  Negated
-                    )  # Drive forward with negative Y (forward)
-                    .with_velocity_y(
-                        # -self._driver_controller.getLeftX() * self._max_speed * MOVE_SPEED_COEFF
-                        -self.apply_deadzone_and_curve(
-                            self._driver_controller.getLeftX(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
-                        )
-                        * self._max_speed
-                        * MOVE_SPEED_COEFF
-                    )  # Drive left with negative X (left)
-                    .with_rotational_rate(
-                        -self.apply_deadzone_and_curve(
-                            self._driver_controller.getRightX() 
-                                if not wpilib.RobotBase.isSimulation()
-                                else self._driver_controller.getRawAxis(2),
-                            JOYSTICK_DEAD_ZONE,
-                            JOYSTICK_EXP_SCALING,
-                        )
-                        * self._max_angular_rate
-                        * ROTATE_SPEED_COEFF
-                    )  # Drive counterclockwise with negative X (left)
+                    .with_velocity_x(self._get_forward_velocity())  # Drive forward with negative Y (forward)
+                    .with_velocity_y(self._get_left_velocity())  # Drive left with negative X (left)
+                    .with_rotational_rate(self._get_rotation_velocity())  # Drive counterclockwise with negative X (left)
                 )
             )
         )
@@ -269,12 +275,8 @@ class RobotContainer:
             commands2.cmd.runOnce(lambda: self._toggle_drive_mode()))
         
         # These methods are passed to the auto-aim and distance shooter command
-        teleop_vel_x = lambda: -self.apply_deadzone_and_curve(
-            self._driver_controller.getLeftY(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
-        ) * self._max_speed * MOVE_SPEED_COEFF
-        teleop_vel_y = lambda: -self.apply_deadzone_and_curve(
-            self._driver_controller.getLeftX(), JOYSTICK_DEAD_ZONE, JOYSTICK_EXP_SCALING
-        ) * self._max_speed * MOVE_SPEED_COEFF
+        teleop_vel_x = lambda: self._get_forward_velocity()
+        teleop_vel_y = lambda: self._get_left_velocity()
 
         # Auto-aim at tower
         # Right trigger: hold to auto-rotate toward the alliance tower.
