@@ -40,7 +40,10 @@ from commands2.sysid import SysIdRoutine
 
 from commands.climberCommand import SetClimberSpeedandTime
 from generated.tuner_constants import TunerConstants
-from pathplannerlib.auto import AutoBuilder, NamedCommands
+from telemetry import Telemetry
+
+from pathplannerlib.auto import AutoBuilder, NamedCommands, PathPlannerAuto
+import phoenix6
 from phoenix6 import swerve
 from telemetry import Telemetry
 from wpilib import DriverStation, LiveWindow, SmartDashboard
@@ -181,7 +184,7 @@ class RobotContainer:
             LEDCommand(self._ledsubsystem, self._shooter, self._intake)
         )
         # Path follower
-        self.configure_path_planner()
+        #self.configure_path_planner()
 
         # Configure the button bindings
         self.configureButtonBindings()
@@ -256,10 +259,10 @@ class RobotContainer:
         self._driver_controller.rightTrigger().whileTrue(
             commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.0))
             .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
-        self._driver_controller.x().onTrue(SetClimberSpeedandTime(self._climber, 0.5, 0.5))
-        self._driver_controller.y().onTrue(SetClimberSpeedandTime(self._climber, -0.5, 0.5))
+        self._driver_controller.x().onTrue(SetClimberSpeedandTime(self._climber, 0.5, 1))
+        self._driver_controller.y().onTrue(SetClimberSpeedandTime(self._climber, -0.5, 1))
         self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
-        #self._driver_controller.leftTrigger().whileFalse(ControlIntake(self._intake, False, False))
+        self._driver_controller.leftBumper().whileFalse(ControlIntake(self._intake, False, False))
 
         # Driver controls
         self._driver_controller.leftBumper().onTrue(
