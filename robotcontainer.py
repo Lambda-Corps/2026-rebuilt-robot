@@ -24,7 +24,8 @@ from constants import (
     TELEOP_MIN_INPUT_RESPONSE_TIME,
     SHOOTER_QUADRCOEF_A,
     SHOOTER_QUADRCOEF_B,
-    SHOOTER_QUADRCOEF_C
+    SHOOTER_QUADRCOEF_C,
+    CLIMBER_MOTOR_SPEED_DEFAULT
 )
 
 import commands2
@@ -260,14 +261,12 @@ class RobotContainer:
         self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._driver_controller.leftTrigger().whileTrue(
-            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.65))
-            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
+            ControlIntake(self._intake, 65.0, False)
+        )
         self._driver_controller.rightTrigger().whileTrue(
-            commands2.cmd.runOnce(lambda: setattr(self, 'TARGET_SHOOTER_DUTY_CYCLE', 0.0))
-            .andThen(ControlIntake(self._intake, self.TARGET_SHOOTER_DUTY_CYCLE, False)))
-        self._driver_controller.x().onTrue(SetClimberSpeedandTime(self._climber, 0.5, 1))
-        self._driver_controller.y().onTrue(SetClimberSpeedandTime(self._climber, -0.5, 1))
-        self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
+            ControlIntake(self._intake, 0.0, False)
+        )
+        # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
         self._driver_controller.leftBumper().whileFalse(ControlIntake(self._intake, False, False))
 
         # Driver controls
@@ -296,16 +295,16 @@ class RobotContainer:
         self._driver_controller.button(2).onTrue(
             ControlFlywheel(self._shooter, 0))
 
-        self._partner_controller.start().whileTrue(SetClimberSpeedandTime(self._climber, 0.5, 0.5))
-        self._partner_controller.back().whileTrue(SetClimberSpeedandTime(self._climber, -0.5, 0.5))
+        self._partner_controller.start().whileTrue(SetClimberSpeedandTime(self._climber, CLIMBER_MOTOR_SPEED_DEFAULT, 0.5))
+        self._partner_controller.back().whileTrue(SetClimberSpeedandTime(self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 0.5))
         # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
         # Intake controls
-        self._partner_controller.x().onTrue(
+        (self._driver_controller.x() | self._partner_controller.x()).onTrue(
             ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False))
-        self._partner_controller.y().onTrue(
+        (self._driver_controller.y() | self._partner_controller.y()).onTrue(
             ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, True))
-        self._partner_controller.leftTrigger().whileTrue(
+        (self._driver_controller.axisGreaterThan(4, 0.5) | self._partner_controller.leftTrigger()).whileTrue(
             ControlIntake(self._intake, 0, False))
 
         # Shooter speed presets
@@ -347,16 +346,16 @@ class RobotContainer:
         # This allows on-demand characterization of the drivetrain without Phoenix Tuner X, but requires you to copy values from logs to tuner_constants.py
         # Run SysId routines when holding back/start and X/Y.
         # Note that each routine should be run exactly once in a single log.
-        (self._driver_controller.back() & self._driver_controller.y()).whileTrue(
+        (self._partner_controller.back() & self._partner_controller.y()).whileTrue(
             self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kForward)
         )
-        (self._driver_controller.back() & self._driver_controller.x()).whileTrue(
+        (self._partner_controller.back() & self._partner_controller.x()).whileTrue(
             self.drivetrain.sys_id_dynamic(SysIdRoutine.Direction.kReverse)
         )
-        (self._driver_controller.start() & self._driver_controller.y()).whileTrue(
+        (self._partner_controller.start() & self._partner_controller.y()).whileTrue(
             self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kForward)
         )
-        (self._driver_controller.start() & self._driver_controller.x()).whileTrue(
+        (self._partner_controller.start() & self._partner_controller.x()).whileTrue(
             self.drivetrain.sys_id_quasistatic(SysIdRoutine.Direction.kReverse)
         )
 
@@ -374,8 +373,10 @@ class RobotContainer:
             return 0.0
         # Normalize to 0-1 range after deadzone
         normalized = (abs(axis_value) - deadzone) / (1.0 - deadzone)
+        
         # Apply curve (e.g., square for smoother ramp)
         curved = normalized**exponent
+        
         # Reapply sign
         final = curved * (1 if axis_value > 0 else -1)
         return final
@@ -472,6 +473,23 @@ class RobotContainer:
             )
         )
 
+    def auto_spin_up_shooter_only(self) -> commands2.Command:
+        """
+        Creates a command that only spins up the shooter based on the expected distance
+        from the tower, without requiring the drivetrain subsystem. 
+        Intended to be used in PathPlanner parallel command groups.
+        """
+        def update_distance_and_spin():
+            # Update target distance calculating to the tower
+            self._get_tower_direction()
+            
+            # Use distance to spin the flywheel based on quadratic curve
+            self._shooter.flywheel_spin(
+                self._flywheel_speed_from_distance(self._target_distance)
+            )
+
+        return commands2.cmd.run(update_distance_and_spin)
+
     def getAutonomousCommand(self) -> commands2.Command:
         """Use this to pass the autonomous command to the main {@link Robot} class.
 
@@ -491,6 +509,8 @@ class RobotContainer:
         NamedCommands.registerCommand("lowerClimber", SetClimberSpeedandTime(self._climber, -0.5, 0.5))
         NamedCommands.registerCommand("AutoAimStationary", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0))
         NamedCommands.registerCommand("AutoAimStationary_2Sec", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(2.0))
+        NamedCommands.registerCommand("AutoAimStationary_1.5Sec", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(0.5))
+        NamedCommands.registerCommand("AutoShooterControl", self.auto_spin_up_shooter_only())
         NamedCommands.registerCommand("VisionReseed", commands2.cmd.runOnce(self._attempt_vision_seed))
         # Build an auto chooser. This will use Commands.none() as the default option.
         self.autoChooser = AutoBuilder.buildAutoChooser("Mid-start")
