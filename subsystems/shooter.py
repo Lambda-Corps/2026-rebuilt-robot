@@ -104,13 +104,13 @@ class Shooter(Subsystem):
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
         # print(f"Flywheel Speed target: {self.MOTOR_SPEED_GLOBAL:6.2}  actual_velocity: {velocity_value:6.2f}")
-        wpilib.SmartDashboard.putNumber("Flywheel RPS Requested", self.MOTOR_SPEED_GLOBAL)
-        wpilib.SmartDashboard.putNumber("FlyWheel RPS Actual: ", round(velocity_value, 2))
+        wpilib.SmartDashboard.putNumber("Flywheel RPS Requested", round(self.MOTOR_SPEED_GLOBAL, 1))
+        wpilib.SmartDashboard.putNumber("FlyWheel RPS Actual: ", round(velocity_value, 1))
 
         indexer_vel = self._shooter_indexer.get_rotor_velocity()
         indexer_vel.refresh()
-        wpilib.SmartDashboard.putNumber("Indexer RPS Requested", self.INDEXER_SPEED_GLOBAL)
-        wpilib.SmartDashboard.putNumber("Indexer RPS Actual: ", round(indexer_vel.value, 2))
+        wpilib.SmartDashboard.putNumber("Indexer RPS Requested", round(self.INDEXER_SPEED_GLOBAL, 1))
+        wpilib.SmartDashboard.putNumber("Indexer RPS Actual: ", round(indexer_vel.value, 1))
 
     def indexer_spin(self, indexer_spinspeed: float) -> None:
         self.INDEXER_SPEED_GLOBAL = indexer_spinspeed
