@@ -46,9 +46,10 @@ flowchart LR
 flowchart LR
     subgraph Partner Controller
         subgraph Other
-            PARTNER_START[Start Button] --> Dec[Decrease Variable Target RPS]
-            PARTNER_BACK[Back Button] --> Inc[Increase Variable Target RPS]
-            PARTNER_RIGHT_STICK[Right Stick Press] --> VisSeed[Seed Drivetrain Pose]
+            PARTNER_START[Start Button] -->|Hold| ClimbUp[Climber Up]
+            PARTNER_BACK[Back Button] -->|Hold| ClimbDown[Climber Down]
+            PARTNER_LEFT_STICK_HOLD[Left Stick Hold] -->|Hold| IdxRevP[Reverse Indexer]
+            PARTNER_RIGHT_STICK_CLICK[Right Stick Click] --> VisSeed[Seed Drivetrain Pose]
         end
 
         subgraph Bumpers and Triggers

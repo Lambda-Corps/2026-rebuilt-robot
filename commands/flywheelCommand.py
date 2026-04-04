@@ -43,6 +43,7 @@ class ControlFlywheel(Command):
         #print("ControlFlywheel Called")
 
     def execute(self):
+        print(f"Shooter speed: {self._speed}")
         self._Flywheel.flywheel_spin(self._speed)
 
     def isFinished(self) -> bool:
