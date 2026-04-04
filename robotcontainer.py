@@ -15,6 +15,7 @@ from constants import (
     SHOOTER_SPEED_INCREMENT,
     SHOOTER_X_OFFSET_INCHES,
     INDEXER_SPEED_DEFAULT,
+    INDEXER_SPEED_REVERSE,
     INTAKE_SPEED_DEFAULT,
     MOVE_SPEED_COEFF,
     ROTATE_SPEED_COEFF,
@@ -25,7 +26,7 @@ from constants import (
     SHOOTER_QUADRCOEF_A,
     SHOOTER_QUADRCOEF_B,
     SHOOTER_QUADRCOEF_C,
-    CLIMBER_MOTOR_SPEED_DEFAULT
+    CLIMBER_MOTOR_SPEED_DEFAULT,
 )
 
 import commands2
@@ -173,10 +174,18 @@ class RobotContainer:
         # Update these coordinates to point to the actual desired field locations
         ALT_TARGET_X_OFFSET = 1.0
         ALT_TARGET_Y_OFFSET = 1.0
-        self._BLUE_SECONDARY_TARGET_A = Translation2d(_tower_x_blue - ALT_TARGET_X_OFFSET, _tower_y + ALT_TARGET_Y_OFFSET)
-        self._BLUE_SECONDARY_TARGET_B = Translation2d(_tower_x_blue - ALT_TARGET_X_OFFSET, _tower_y - ALT_TARGET_Y_OFFSET)
-        self._RED_SECONDARY_TARGET_A = Translation2d(_tower_x_red + ALT_TARGET_X_OFFSET, _tower_y + ALT_TARGET_Y_OFFSET)
-        self._RED_SECONDARY_TARGET_B = Translation2d(_tower_x_red + ALT_TARGET_X_OFFSET, _tower_y - ALT_TARGET_Y_OFFSET)
+        self._BLUE_SECONDARY_TARGET_A = Translation2d(
+            _tower_x_blue - ALT_TARGET_X_OFFSET, _tower_y + ALT_TARGET_Y_OFFSET
+        )
+        self._BLUE_SECONDARY_TARGET_B = Translation2d(
+            _tower_x_blue - ALT_TARGET_X_OFFSET, _tower_y - ALT_TARGET_Y_OFFSET
+        )
+        self._RED_SECONDARY_TARGET_A = Translation2d(
+            _tower_x_red + ALT_TARGET_X_OFFSET, _tower_y + ALT_TARGET_Y_OFFSET
+        )
+        self._RED_SECONDARY_TARGET_B = Translation2d(
+            _tower_x_red + ALT_TARGET_X_OFFSET, _tower_y - ALT_TARGET_Y_OFFSET
+        )
 
         self._logger = Telemetry(self._max_speed)
         self._driver_controller = CommandXboxController(0)
@@ -184,6 +193,11 @@ class RobotContainer:
         self.drivetrain = TunerConstants.create_drivetrain()
         self._ledsubsystem = LEDSubsystem()
         self._intake = Intake()
+        self._intake.setDefaultCommand(
+            commands2.cmd.run(
+                lambda: self._intake.intake_speed_global_control(), self._intake
+            )
+        )
         self._shooter = Shooter()
         self._climber = Climber()
         self._vision = VisionSubsystem(self.drivetrain)
@@ -194,12 +208,19 @@ class RobotContainer:
             LEDCommand(self._ledsubsystem, self._shooter, self._intake)
         )
         # Path follower
-        #self.configure_path_planner()
+        self.configure_path_planner()
 
         # Configure the button bindings
         self.configureButtonBindings()
 
-    def getAutonomousCommand():
+    # def getAutonomousCommand():
+    #     return self.autoChooser.getSelected()
+
+    def getAutonomousCommand(self) -> commands2.Command:
+        """Use this to pass the autonomous command to the main {@link Robot} class.
+
+        :returns: the command to run in autonomous
+        """
         return self.autoChooser.getSelected()
 
     def _get_forward_velocity(self) -> float:
@@ -216,13 +237,17 @@ class RobotContainer:
 
     def _get_rotation_velocity(self) -> float:
         v = self.apply_deadzone_and_curve(
-            self._driver_controller.getRightX() 
-                if not wpilib.RobotBase.isSimulation()
-                else self._driver_controller.getRawAxis(2),
+            self._driver_controller.getRightX()
+            if not wpilib.RobotBase.isSimulation()
+            else self._driver_controller.getRawAxis(2),
             JOYSTICK_DEAD_ZONE,
             JOYSTICK_EXP_SCALING,
         )
-        return -self._rot_limiter.calculate(v) * self._max_angular_rate * ROTATE_SPEED_COEFF
+        return (
+            -self._rot_limiter.calculate(v)
+            * self._max_angular_rate
+            * ROTATE_SPEED_COEFF
+        )
 
     def configureButtonBindings(self) -> None:
         """
@@ -244,9 +269,15 @@ class RobotContainer:
                         if self.IS_FIELD_CENTRIC
                         else self._drive_robot_centric
                     )
-                    .with_velocity_x(self._get_forward_velocity())  # Drive forward with negative Y (forward)
-                    .with_velocity_y(self._get_left_velocity())  # Drive left with negative X (left)
-                    .with_rotational_rate(self._get_rotation_velocity())  # Drive counterclockwise with negative X (left)
+                    .with_velocity_x(
+                        self._get_forward_velocity()
+                    )  # Drive forward with negative Y (forward)
+                    .with_velocity_y(
+                        self._get_left_velocity()
+                    )  # Drive left with negative X (left)
+                    .with_rotational_rate(
+                        self._get_rotation_velocity()
+                    )  # Drive counterclockwise with negative X (left)
                 )
             )
         )
@@ -257,22 +288,17 @@ class RobotContainer:
         Trigger(DriverStation.isDisabled).whileTrue(
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
-        #Consider chaining flywheel after indexer
+
         self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
         self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._driver_controller.leftTrigger().whileTrue(
-            ControlIntake(self._intake, 65.0, False)
-        )
-        self._driver_controller.rightTrigger().whileTrue(
-            ControlIntake(self._intake, 0.0, False)
-        )
+
         # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
-        self._driver_controller.leftBumper().whileFalse(ControlIntake(self._intake, False, False))
 
         # Driver controls
         self._driver_controller.leftBumper().onTrue(
-            commands2.cmd.runOnce(lambda: self._toggle_drive_mode()))
-        
+            commands2.cmd.runOnce(lambda: self._toggle_drive_mode())
+        )
+
         # These methods are passed to the auto-aim and distance shooter command
         teleop_vel_x = lambda: self._get_forward_velocity()
         teleop_vel_y = lambda: self._get_left_velocity()
@@ -281,41 +307,62 @@ class RobotContainer:
         # Right trigger: hold to auto-rotate toward the alliance tower.
         # Translation (left stick) still works normally while held.
         (
-            self._partner_controller.rightTrigger(0.05) # Hardware
-            | (Trigger(wpilib.RobotBase.isSimulation) & Trigger(lambda: self._driver_controller.getRawAxis(5) > JOYSTICK_DEAD_ZONE)) # Simulation using Xbox controller
+            self._partner_controller.rightTrigger(0.05)  # Hardware
+            | (
+                Trigger(wpilib.RobotBase.isSimulation)
+                & Trigger(
+                    lambda: self._driver_controller.getRawAxis(5) > JOYSTICK_DEAD_ZONE
+                )
+            )  # Simulation using Xbox controller
         ).whileTrue(self.auto_aim_and_distance_shooter(teleop_vel_x, teleop_vel_y))
 
         # Sim "driver" controls
         self._driver_controller.a().onTrue(
-            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
-        self._driver_controller.b().onTrue(
-            ControlFlywheel(self._shooter, 0))
+            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL)
+        )
+        self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
         self._driver_controller.button(1).onTrue(
-            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
-        self._driver_controller.button(2).onTrue(
-            ControlFlywheel(self._shooter, 0))
+            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL)
+        )
+        self._driver_controller.button(2).onTrue(ControlFlywheel(self._shooter, 0))
 
-        self._partner_controller.start().whileTrue(SetClimberSpeedandTime(self._climber, CLIMBER_MOTOR_SPEED_DEFAULT, 0.5))
-        self._partner_controller.back().whileTrue(SetClimberSpeedandTime(self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 0.5))
+        self._partner_controller.start().whileTrue(
+            SetClimberSpeedandTime(
+                self._climber, CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
+            ).repeatedly()
+        )
+        self._partner_controller.back().whileTrue(
+            SetClimberSpeedandTime(
+                self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
+            ).repeatedly()
+        )
         # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
         # Intake controls
         (self._driver_controller.x() | self._partner_controller.x()).onTrue(
-            ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False))
+            ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False)
+        )
         (self._driver_controller.y() | self._partner_controller.y()).onTrue(
-            ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, True))
-        (self._driver_controller.axisGreaterThan(4, 0.5) | self._partner_controller.leftTrigger()).whileTrue(
-            ControlIntake(self._intake, 0, False))
+            ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, True)
+        )
+        (
+            self._partner_controller.leftTrigger(0.5)
+            # | self._driver_controller.axisGreaterThan(4, 0.5)
+        ).whileTrue(ControlIntake(self._intake, 0, False))
 
         # Shooter speed presets
         (self._driver_controller.pov(0) | self._partner_controller.pov(0)).onTrue(
-            ControlFlywheel(self._shooter, SHOOTER_SPEED_UP))
+            ControlFlywheel(self._shooter, SHOOTER_SPEED_UP)
+        )
         (self._driver_controller.pov(90) | self._partner_controller.pov(90)).onTrue(
-            ControlFlywheel(self._shooter, SHOOTER_SPEED_RIGHT))
+            ControlFlywheel(self._shooter, SHOOTER_SPEED_RIGHT)
+        )
         (self._driver_controller.pov(180) | self._partner_controller.pov(180)).onTrue(
-            ControlFlywheel(self._shooter, SHOOTER_SPEED_DOWN))
+            ControlFlywheel(self._shooter, SHOOTER_SPEED_DOWN)
+        )
         (self._driver_controller.pov(270) | self._partner_controller.pov(270)).onTrue(
-            ControlFlywheel(self._shooter, SHOOTER_SPEED_LEFT))
+            ControlFlywheel(self._shooter, SHOOTER_SPEED_LEFT)
+        )
 
         # Shooter speed variable control
         # self._partner_controller.start().onTrue(
@@ -327,21 +374,33 @@ class RobotContainer:
 
         # Shooter start/stop
         self._partner_controller.a().onTrue(
-            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL))
-        self._partner_controller.b().onTrue(
-            ControlFlywheel(self._shooter, 0))
+            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL)
+        )
+        self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
 
         # Indexer controls
         self._partner_controller.leftBumper().whileTrue(
-            ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT))
+            ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT)
+        )
         self._partner_controller.rightBumper().whileTrue(
-            ControlIndexer(self._shooter, 0))
+            ControlIndexer(self._shooter, 0)
+        )
+
+        (
+            self._driver_controller.leftStick() | self._partner_controller.leftStick()
+        ).onTrue(
+            commands2.cmd.runOnce(lambda: self._shooter.set_indexer_reversed(True))
+        ).onFalse(
+            commands2.cmd.runOnce(lambda: self._shooter.set_indexer_reversed(False))
+        )
 
         self._partner_controller.rightStick().onTrue(
-            commands2.cmd.runOnce(self._attempt_vision_seed))
+            commands2.cmd.runOnce(self._attempt_vision_seed)
+        )
 
         self.drivetrain.register_telemetry(
-            lambda state: self._logger.telemeterize(state))
+            lambda state: self._logger.telemeterize(state)
+        )
 
         # This allows on-demand characterization of the drivetrain without Phoenix Tuner X, but requires you to copy values from logs to tuner_constants.py
         # Run SysId routines when holding back/start and X/Y.
@@ -373,10 +432,10 @@ class RobotContainer:
             return 0.0
         # Normalize to 0-1 range after deadzone
         normalized = (abs(axis_value) - deadzone) / (1.0 - deadzone)
-        
+
         # Apply curve (e.g., square for smoother ramp)
         curved = normalized**exponent
-        
+
         # Reapply sign
         final = curved * (1 if axis_value > 0 else -1)
         return final
@@ -410,9 +469,17 @@ class RobotContainer:
         else:
             # Depending on robot Y, target SECONDARY target A or B (the same side the robot is on)
             if pose.y >= self._BLUE_TOWER.y:
-                target = self._RED_SECONDARY_TARGET_A if is_red else self._BLUE_SECONDARY_TARGET_A
+                target = (
+                    self._RED_SECONDARY_TARGET_A
+                    if is_red
+                    else self._BLUE_SECONDARY_TARGET_A
+                )
             else:
-                target = self._RED_SECONDARY_TARGET_B if is_red else self._BLUE_SECONDARY_TARGET_B
+                target = (
+                    self._RED_SECONDARY_TARGET_B
+                    if is_red
+                    else self._BLUE_SECONDARY_TARGET_B
+                )
 
         # ChassisSpeeds are robot-relative; rotate into field frame
         heading = pose.rotation().radians()
@@ -430,38 +497,48 @@ class RobotContainer:
             angle += math.pi
 
         # Distance from the back of the robot to the target
-        BACK_OFFSET_METERS = SHOOTER_X_OFFSET_INCHES * 0.0254  # inches behind center (wheel line)
-        back_x = pose.x # - BACK_OFFSET_METERS * math.cos(heading)
-        back_y = pose.y # - BACK_OFFSET_METERS * math.sin(heading)
-        self._target_distance = math.sqrt(
-            (target.x - back_x) ** 2 + (target.y - back_y) ** 2
-        ) + BACK_OFFSET_METERS
+        BACK_OFFSET_METERS = (
+            SHOOTER_X_OFFSET_INCHES * 0.0254
+        )  # inches behind center (wheel line)
+        back_x = pose.x  # - BACK_OFFSET_METERS * math.cos(heading)
+        back_y = pose.y  # - BACK_OFFSET_METERS * math.sin(heading)
+        self._target_distance = (
+            math.sqrt((target.x - back_x) ** 2 + (target.y - back_y) ** 2)
+            + BACK_OFFSET_METERS
+        )
         SmartDashboard.putNumber(
             "TargetDistanceMeters", round(self._target_distance, 2)
         )
 
         return Rotation2d(angle)
 
-    def _flywheel_speed_from_distance(self, distance: float, voltage: float = None) -> float:
+    def _flywheel_speed_from_distance(
+        self, distance: float, voltage: float = None
+    ) -> float:
         """Return flywheel speed for a given distance using quadratic fit: a*x^2 + b*x + c,
         scaled by a voltage compensation multiplier."""
-        base_speed = SHOOTER_QUADRCOEF_A * (distance ** 2) + SHOOTER_QUADRCOEF_B * distance + SHOOTER_QUADRCOEF_C
+        base_speed = (
+            SHOOTER_QUADRCOEF_A * (distance**2)
+            + SHOOTER_QUADRCOEF_B * distance
+            + SHOOTER_QUADRCOEF_C
+        )
 
         if voltage is None:
             voltage = wpilib.RobotController.getBatteryVoltage()
 
-        # Curve outputs target RPS cleanly now. 
+        # Curve outputs target RPS cleanly now.
         return base_speed
 
-    def auto_aim_and_distance_shooter(self, velocity_x_supplier, velocity_y_supplier) -> commands2.Command:
+    def auto_aim_and_distance_shooter(
+        self, velocity_x_supplier, velocity_y_supplier
+    ) -> commands2.Command:
         """
         Creates a command that uses _face_tower to aim at the alliance tower and
         simultaneously spins up the shooter based on distance.
         """
         return commands2.ParallelCommandGroup(
             self.drivetrain.apply_request(
-                lambda: self._face_tower
-                .with_velocity_x(velocity_x_supplier())
+                lambda: self._face_tower.with_velocity_x(velocity_x_supplier())
                 .with_velocity_y(velocity_y_supplier())
                 .with_target_direction(self._get_tower_direction())
             ),
@@ -470,19 +547,20 @@ class RobotContainer:
                     self._flywheel_speed_from_distance(self._target_distance)
                 ),
                 self._shooter,
-            )
+            ),
         )
 
     def auto_spin_up_shooter_only(self) -> commands2.Command:
         """
         Creates a command that only spins up the shooter based on the expected distance
-        from the tower, without requiring the drivetrain subsystem. 
+        from the tower, without requiring the drivetrain subsystem.
         Intended to be used in PathPlanner parallel command groups.
         """
+
         def update_distance_and_spin():
             # Update target distance calculating to the tower
             self._get_tower_direction()
-            
+
             # Use distance to spin the flywheel based on quadratic curve
             self._shooter.flywheel_spin(
                 self._flywheel_speed_from_distance(self._target_distance)
@@ -490,28 +568,52 @@ class RobotContainer:
 
         return commands2.cmd.run(update_distance_and_spin)
 
-    def getAutonomousCommand(self) -> commands2.Command:
-        """Use this to pass the autonomous command to the main {@link Robot} class.
-
-        :returns: the command to run in autonomous
-        """
-        return self.autoChooser.getSelected()
-
     def configure_path_planner(self):
         # Named commands must be created before Autos can be defined
-        NamedCommands.registerCommand("startflywheelStart", ControlFlywheel(self._shooter, SHOOTER_DEFAULT_RPS))
-        NamedCommands.registerCommand("startflywheelStop", ControlFlywheel(self._shooter, -0.0))
-        NamedCommands.registerCommand("runindexer", ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT))
+        NamedCommands.registerCommand(
+            "startflywheelStart", ControlFlywheel(self._shooter, SHOOTER_DEFAULT_RPS)
+        )
+        NamedCommands.registerCommand(
+            "startflywheelStop", ControlFlywheel(self._shooter, -0.0)
+        )
+        NamedCommands.registerCommand(
+            "runindexer", ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT)
+        )
         NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
-        NamedCommands.registerCommand("runIntake", ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False))
-        NamedCommands.registerCommand("stopIntake", ControlIntake(self._intake, 0, False))
-        NamedCommands.registerCommand("raiseClimber", SetClimberSpeedandTime(self._climber, 0.5, 0.5))
-        NamedCommands.registerCommand("lowerClimber", SetClimberSpeedandTime(self._climber, -0.5, 0.5))
-        NamedCommands.registerCommand("AutoAimStationary", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0))
-        NamedCommands.registerCommand("AutoAimStationary_2Sec", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(2.0))
-        NamedCommands.registerCommand("AutoAimStationary_1.5Sec", self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(0.5))
-        NamedCommands.registerCommand("AutoShooterControl", self.auto_spin_up_shooter_only())
-        NamedCommands.registerCommand("VisionReseed", commands2.cmd.runOnce(self._attempt_vision_seed))
+        NamedCommands.registerCommand(
+            "runIntake", ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False)
+        )
+        NamedCommands.registerCommand(
+            "stopIntake", ControlIntake(self._intake, 0, False)
+        )
+        NamedCommands.registerCommand(
+            "raiseClimber", SetClimberSpeedandTime(self._climber, 0.5, 0.5)
+        )
+        NamedCommands.registerCommand(
+            "lowerClimber", SetClimberSpeedandTime(self._climber, -0.5, 0.5)
+        )
+        NamedCommands.registerCommand(
+            "AutoAimStationary",
+            self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0),
+        )
+        NamedCommands.registerCommand(
+            "AutoAimStationary_2Sec",
+            self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(
+                2.0
+            ),
+        )
+        NamedCommands.registerCommand(
+            "AutoAimStationary_1.5Sec",
+            self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(
+                0.5
+            ),
+        )
+        NamedCommands.registerCommand(
+            "AutoShooterControl", self.auto_spin_up_shooter_only()
+        )
+        NamedCommands.registerCommand(
+            "VisionReseed", commands2.cmd.runOnce(self._attempt_vision_seed)
+        )
         # Build an auto chooser. This will use Commands.none() as the default option.
         self.autoChooser = AutoBuilder.buildAutoChooser("Mid-start")
 
