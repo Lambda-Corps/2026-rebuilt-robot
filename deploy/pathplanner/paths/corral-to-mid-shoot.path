@@ -3,32 +3,37 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 0.544001774622892,
-        "y": 5.729086069210293
+        "x": 0.59625,
+        "y": 7.030455043859649
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.8316681455190764,
-        "y": 5.841756876663709
+        "x": 0.3462280701754388,
+        "y": 4.736984649122807
       },
       "isLocked": false,
       "linkedName": "mid shoot to coral"
     },
     {
       "anchor": {
-        "x": 1.8316681455190764,
-        "y": 4.827719609582964
+        "x": 2.3031304824561403,
+        "y": 4.664862938596491
       },
       "prevControl": {
-        "x": 1.8050348646105103,
-        "y": 5.076296898062916
+        "x": 2.276497201547574,
+        "y": 4.913440227076443
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": -12.300103527632192
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -48,7 +53,7 @@
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 156.86857918537257
+    "rotation": -174.55966796899446
   },
   "useDefaultConstraints": true
 }

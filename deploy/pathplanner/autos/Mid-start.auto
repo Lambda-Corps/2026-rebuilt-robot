@@ -13,7 +13,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "mid-to-mid-shoot"
+            "pathName": "mid-start-to-mid-shoot"
           }
         },
         {
@@ -31,7 +31,7 @@
         {
           "type": "named",
           "data": {
-            "name": "AutoAimStationary_2Sec"
+            "name": "AutoAimStationary_1.5Sec"
           }
         },
         {
@@ -73,7 +73,7 @@
         {
           "type": "named",
           "data": {
-            "name": "AutoAimStationary_2Sec"
+            "name": "AutoAimStationary_1.5Sec"
           }
         },
         {
