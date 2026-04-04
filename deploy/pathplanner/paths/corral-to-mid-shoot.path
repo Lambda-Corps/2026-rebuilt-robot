@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 0.59625,
-        "y": 7.030455043859649
+        "x": 2.084915662650602,
+        "y": 3.707168674698795
       },
       "prevControl": null,
       "nextControl": {
-        "x": 0.3462280701754388,
-        "y": 4.736984649122807
+        "x": 1.8348937328260408,
+        "y": 1.4136982799619524
       },
       "isLocked": false,
       "linkedName": "mid shoot to coral"
@@ -53,7 +53,7 @@
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -174.55966796899446
+    "rotation": -90.0
   },
   "useDefaultConstraints": true
 }

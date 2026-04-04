@@ -1,0 +1,91 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "runIntake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "mid-start-to-mid-shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "VisionReseed"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.1
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimStationary_1.5Sec"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runindexer"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIndexer"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "mid-shoot-to-corral"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "corral-to-mid-shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "VisionReseed"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAimStationary_1.5Sec"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runindexer"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

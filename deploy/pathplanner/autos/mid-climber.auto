@@ -5,15 +5,27 @@
     "data": {
       "commands": [
         {
-          "type": "named",
+          "type": "path",
           "data": {
-            "name": "startflywheelStart"
+            "pathName": "start-to-climber-shoot-mid"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": null
+            "pathName": "climber-to-tower"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "raiseClimber"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "climber-adjust"
           }
         },
         {
@@ -25,7 +37,7 @@
         {
           "type": "named",
           "data": {
-            "name": "runindexer"
+            "name": "lowerClimber"
           }
         },
         {
@@ -35,15 +47,9 @@
           }
         },
         {
-          "type": "wait",
+          "type": "path",
           "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "lowerClimber"
+            "pathName": "climber-return"
           }
         }
       ]
