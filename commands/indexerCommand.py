@@ -27,26 +27,26 @@ from phoenix6.configs import TalonFXConfiguration
 from phoenix6.signals.spn_enums import (InvertedValue, NeutralModeValue, FeedbackSensorSourceValue)
 from phoenix6 import StatusCode
 from wpilib import SmartDashboard, AnalogInput, RobotBase, Timer
-from subsystems.shooter import Shooter
+from subsystems.indexer import Indexer
 from subsystems.ledsubsystem import LEDSubsystem
 
 class ControlIndexer(Command):
-    def __init__(self, sub: Shooter, speed: float):
+    def __init__(self, sub: Indexer, speed: float):
         super().__init__()
 
         self._speed = speed
-        self._ShooterSubSys = sub
+        self._indexer_subsys = sub
 
-        self.addRequirements(self._ShooterSubSys)  
+        self.addRequirements(self._indexer_subsys)  
 
     def initialize(self):
         pass
 
     def execute(self):
-        # if (self._ShooterSubSys.is_shooter_spinning(0.3)):
-        self._ShooterSubSys.indexer_spin(self._speed)
+        # if (self._indexer_subsys.is_shooter_spinning(0.3)):
+        self._indexer_subsys.indexer_spin(self._speed)
         # else:
-        #     self._ShooterSubSys.flywheel_spin(0.5)
+        #     self._indexer_subsys.flywheel_spin(0.5)
         #     print("Flywheel getting ready.")
 
 

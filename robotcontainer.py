@@ -57,6 +57,7 @@ from wpimath.units import rotationsToRadians
 from subsystems.intake import Intake
 from subsystems.ledsubsystem import LEDSubsystem
 from subsystems.shooter import Shooter
+from subsystems.indexer import Indexer
 
 from subsystems.climber import Climber
 from commands.climberCommand import SetClimberSpeedandTime
@@ -199,6 +200,7 @@ class RobotContainer:
             )
         )
         self._shooter = Shooter()
+        self._indexer = Indexer()
         self._climber = Climber()
         self._vision = VisionSubsystem(self.drivetrain)
         self._target_distance = (
@@ -380,18 +382,18 @@ class RobotContainer:
 
         # Indexer controls
         self._partner_controller.leftBumper().whileTrue(
-            ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT)
+            ControlIndexer(self._indexer, INDEXER_SPEED_DEFAULT)
         )
         self._partner_controller.rightBumper().whileTrue(
-            ControlIndexer(self._shooter, 0)
+            ControlIndexer(self._indexer, 0)
         )
 
         (
             self._driver_controller.leftStick() | self._partner_controller.leftStick()
         ).onTrue(
-            commands2.cmd.runOnce(lambda: self._shooter.set_indexer_reversed(True))
+            commands2.cmd.runOnce(lambda: self._indexer.set_indexer_reversed(True))
         ).onFalse(
-            commands2.cmd.runOnce(lambda: self._shooter.set_indexer_reversed(False))
+            commands2.cmd.runOnce(lambda: self._indexer.set_indexer_reversed(False))
         )
 
         self._partner_controller.rightStick().onTrue(
@@ -577,9 +579,9 @@ class RobotContainer:
             "startflywheelStop", ControlFlywheel(self._shooter, -0.0)
         )
         NamedCommands.registerCommand(
-            "runindexer", ControlIndexer(self._shooter, INDEXER_SPEED_DEFAULT)
+            "runindexer", ControlIndexer(self._indexer, INDEXER_SPEED_DEFAULT)
         )
-        NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._shooter, 0))
+        NamedCommands.registerCommand("stopIndexer", ControlIndexer(self._indexer, 0))
         NamedCommands.registerCommand(
             "runIntake", ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False)
         )
