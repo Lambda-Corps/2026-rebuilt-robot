@@ -338,13 +338,13 @@ class RobotContainer:
         # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
         # Intake controls
-        (self._driver_controller.x() | 
-            (Trigger(wpilib.RobotBase.isSimulation) & self._partner_controller.x())
+        (self._partner_controller.x() | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.x())
         ).onTrue(
             ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False)
         )
-        (self._driver_controller.y() | 
-            (Trigger(wpilib.RobotBase.isSimulation) & self._partner_controller.y())
+        (self._partner_controller.y() | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.y())
         ).onTrue(
             ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, True)
         )
@@ -406,12 +406,7 @@ class RobotContainer:
             (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.leftBumper() & Trigger(lambda: self._shooter.is_shooter_spinning(0.1)))
         ).whileTrue(
             ControlIndexer(self._indexer, INDEXER_SPEED_DEFAULT)
-        )
-
-        # When partner_controller right bumper (or isSimulation and driver right bumper) is pressed, stop the indexer
-        (self._partner_controller.rightBumper() |
-            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.rightBumper())
-        ).whileTrue(
+        ).whileFalse(
             ControlIndexer(self._indexer, 0)
         )
 
