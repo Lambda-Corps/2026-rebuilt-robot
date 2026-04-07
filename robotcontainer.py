@@ -400,7 +400,6 @@ class RobotContainer:
         #         lambda: self._shooter.change_speed_variable_function(SHOOTER_SPEED_INCREMENT)))
 
         # Indexer controls
-
         # When partner_controller left bumper (or isSimulation and driver left bumper) is pressed and shooter is spinning, run the indexer
         (self._partner_controller.leftBumper() & Trigger(lambda: self._shooter.is_shooter_spinning(0.1)) |
             (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.leftBumper() & Trigger(lambda: self._shooter.is_shooter_spinning(0.1)))
