@@ -291,10 +291,7 @@ class RobotContainer:
             self.drivetrain.apply_request(lambda: idle).ignoringDisable(True)
         )
 
-        self._driver_controller.a().onTrue(ControlFlywheel(self._shooter, -0.6))
-        self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-
-        # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
+         # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
         # Driver controls
         self._driver_controller.leftBumper().onTrue(
@@ -318,15 +315,15 @@ class RobotContainer:
             )  # Simulation using Xbox controller
         ).whileTrue(self.auto_aim_and_distance_shooter(teleop_vel_x, teleop_vel_y))
 
-        # Sim "driver" controls
-        self._driver_controller.a().onTrue(
-            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL)
-        )
-        self._driver_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-        self._driver_controller.button(1).onTrue(
-            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL)
-        )
-        self._driver_controller.button(2).onTrue(ControlFlywheel(self._shooter, 0))
+        # # Sim "driver" controls
+        # self._driver_controller.button(1).onTrue(
+        #     ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL)
+        # )
+        # self._driver_controller.button(2).onTrue(
+        #     ControlIndexer(self._indexer, 0).andThen(
+        #         ControlFlywheel(self._shooter, 0)
+        #     )
+        # )
 
         self._partner_controller.start().whileTrue(
             SetClimberSpeedandTime(
@@ -341,62 +338,94 @@ class RobotContainer:
         # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
         # Intake controls
-        (self._driver_controller.x() | self._partner_controller.x()).onTrue(
+        (self._driver_controller.x() | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._partner_controller.x())
+        ).onTrue(
             ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, False)
         )
-        (self._driver_controller.y() | self._partner_controller.y()).onTrue(
+        (self._driver_controller.y() | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._partner_controller.y())
+        ).onTrue(
             ControlIntake(self._intake, INTAKE_SPEED_DEFAULT, True)
         )
-        (
-            self._partner_controller.leftTrigger(0.5)
-            # | self._driver_controller.axisGreaterThan(4, 0.5)
-        ).whileTrue(ControlIntake(self._intake, 0, False))
+        (self._partner_controller.leftTrigger(0.5) | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.axisGreaterThan(4, 0.5))
+        ).whileTrue(
+            ControlIntake(self._intake, 0, False)
+        )
+
+        # Start/Stop shooter
+        (self._partner_controller.a() | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.a())
+        ).onTrue(
+            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL)
+        )
+        # Stop shooter
+        (self._partner_controller.b() |
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.b())
+        ).onTrue(
+            ControlIndexer(self._indexer, 0).andThen(
+                ControlFlywheel(self._shooter, 0)
+            )
+        )
 
         # Shooter speed presets
-        (self._driver_controller.pov(0) | self._partner_controller.pov(0)).onTrue(
+        (self._partner_controller.pov(0) | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.pov(0))
+        ).onTrue(
             ControlFlywheel(self._shooter, SHOOTER_SPEED_UP)
         )
-        (self._driver_controller.pov(90) | self._partner_controller.pov(90)).onTrue(
+        (self._partner_controller.pov(90) | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.pov(90))
+        ).onTrue(
             ControlFlywheel(self._shooter, SHOOTER_SPEED_RIGHT)
         )
-        (self._driver_controller.pov(180) | self._partner_controller.pov(180)).onTrue(
+        (self._partner_controller.pov(180) | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.pov(180))
+        ).onTrue(
             ControlFlywheel(self._shooter, SHOOTER_SPEED_DOWN)
         )
-        (self._driver_controller.pov(270) | self._partner_controller.pov(270)).onTrue(
+        (self._partner_controller.pov(270) | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.pov(270))
+        ).onTrue(
             ControlFlywheel(self._shooter, SHOOTER_SPEED_LEFT)
         )
 
         # Shooter speed variable control
-        # self._partner_controller.start().onTrue(
+            # self._partner_controller.start().onTrue(
         #     commands2.cmd.runOnce(
         #         lambda: self._shooter.change_speed_variable_function(-SHOOTER_SPEED_INCREMENT)))
         # self._partner_controller.back().onTrue(
         #     commands2.cmd.runOnce(
         #         lambda: self._shooter.change_speed_variable_function(SHOOTER_SPEED_INCREMENT)))
 
-        # Shooter start/stop
-        self._partner_controller.a().onTrue(
-            ControlFlywheel(self._shooter, -self._shooter.MOTOR_SPEED_GLOBAL)
-        )
-        self._partner_controller.b().onTrue(ControlFlywheel(self._shooter, 0))
-
         # Indexer controls
-        self._partner_controller.leftBumper().whileTrue(
+
+        # When partner_controller left bumper (or isSimulation and driver left bumper) is pressed and shooter is spinning, run the indexer
+        (self._partner_controller.leftBumper() & Trigger(lambda: self._shooter.is_shooter_spinning(0.1)) |
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.leftBumper() & Trigger(lambda: self._shooter.is_shooter_spinning(0.1)))
+        ).whileTrue(
             ControlIndexer(self._indexer, INDEXER_SPEED_DEFAULT)
         )
-        self._partner_controller.rightBumper().whileTrue(
+
+        # When partner_controller right bumper (or isSimulation and driver right bumper) is pressed, stop the indexer
+        (self._partner_controller.rightBumper() |
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.rightBumper())
+        ).whileTrue(
             ControlIndexer(self._indexer, 0)
         )
 
-        (
-            self._driver_controller.leftStick() | self._partner_controller.leftStick()
+        (self._partner_controller.leftStick() | 
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.leftStick())
         ).onTrue(
             commands2.cmd.runOnce(lambda: self._indexer.set_indexer_reversed(True))
         ).onFalse(
             commands2.cmd.runOnce(lambda: self._indexer.set_indexer_reversed(False))
         )
 
-        self._partner_controller.rightStick().onTrue(
+        (self._partner_controller.rightStick() |
+            (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.rightStick())
+        ).onTrue(
             commands2.cmd.runOnce(self._attempt_vision_seed)
         )
 
@@ -529,7 +558,7 @@ class RobotContainer:
             voltage = wpilib.RobotController.getBatteryVoltage()
 
         # Curve outputs target RPS cleanly now.
-        return base_speed
+        return round(base_speed, 2)
 
     def auto_aim_and_distance_shooter(
         self, velocity_x_supplier, velocity_y_supplier
