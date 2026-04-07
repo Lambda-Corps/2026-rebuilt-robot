@@ -10,7 +10,8 @@ from utils.logger import (
 )
 from constants import SHOOTER_MIN_RPS, SHOOTER_MAX_RPS
 from wpilib.simulation import FlywheelSim
-from wpimath.system.plant import DCMotor
+from wpimath.system.plant import DCMotor, LinearSystemId
+import math
 from phoenix6.configs import (
     TalonFXConfiguration,
     TalonFXConfigurator,
@@ -56,6 +57,11 @@ class Shooter(Subsystem):
 
         self.MOTOR_SPEED_GLOBAL = 50.0  # Initial speed
 
+        if utils.is_simulation():
+            flywheel_gearbox = DCMotor.falcon500(1)
+            flywheel_plant = LinearSystemId.flywheelSystem(flywheel_gearbox, 0.001, 1.0)
+            self.flywheel_sim = FlywheelSim(flywheel_plant, flywheel_gearbox)
+
 
     def __configure_flywheel(self) -> TalonFX:
         talon = TalonFX(20, "" if utils.is_simulation() else "canivore1")     # CAN Bus Address
@@ -77,20 +83,19 @@ class Shooter(Subsystem):
         wpilib.SmartDashboard.putNumber("Flywheel RPS Requested", self.MOTOR_SPEED_GLOBAL)
 
     def periodic(self):
-        # dashboard_rps = wpilib.SmartDashboard.getNumber("Flywheel RPS Requested", self.MOTOR_SPEED_GLOBAL)
-        # if abs(dashboard_rps - self.MOTOR_SPEED_GLOBAL) > 0.001:
-        #     self.flywheel_spin(dashboard_rps)
-
-        # dash_indexer_rps = wpilib.SmartDashboard.getNumber("Indexer RPS Requested", self.INDEXER_SPEED_GLOBAL)
-        # if abs(dash_indexer_rps - self.INDEXER_SPEED_GLOBAL) > 0.001:
-        #     self.indexer_spin(dash_indexer_rps)
-
         rotor_velocity = self._shooter_flywheel.get_rotor_velocity()     # Get the flywheel speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
         # print(f"Flywheel Speed target: {self.MOTOR_SPEED_GLOBAL:6.2}  actual_velocity: {velocity_value:6.2f}")
         wpilib.SmartDashboard.putNumber("Flywheel RPS Requested", round(self.MOTOR_SPEED_GLOBAL, 1))
-        wpilib.SmartDashboard.putNumber("FlyWheel RPS Actual: ", round(velocity_value, 1))
+        wpilib.SmartDashboard.putNumber("FlyWheel RPS Actual", round(velocity_value, 1))
+
+    def simulationPeriodic(self) -> None:
+        motor_voltage = self._shooter_flywheel.sim_state.motor_voltage
+        self.flywheel_sim.setInputVoltage(motor_voltage)
+        self.flywheel_sim.update(0.02)
+        sim_velocity_rps = self.flywheel_sim.getAngularVelocity() / (2 * math.pi)
+        self._shooter_flywheel.sim_state.set_rotor_velocity(sim_velocity_rps)
 
 
     def change_speed_variable_function(self, speed_update: float) -> None:

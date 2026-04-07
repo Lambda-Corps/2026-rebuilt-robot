@@ -33,7 +33,7 @@ class Intake(Subsystem):
         if utils.is_simulation():
             # Using a single Falcon 500, 1:1 gear ratio, and an extremely low MOI of 0.0001 kg*m^2 for millisecond-level responsiveness
             intake_gearbox = DCMotor.falcon500(1)
-            intake_plant = LinearSystemId.flywheelSystem(intake_gearbox, 0.0001, 1.0)
+            intake_plant = LinearSystemId.flywheelSystem(intake_gearbox, 0.001, 1.0)
             self.intake_sim = FlywheelSim(intake_plant, intake_gearbox)
 
     def __configure_intake(self) -> TalonFX:
@@ -51,8 +51,8 @@ class Intake(Subsystem):
         rotor_velocity = self._intake_motor.get_rotor_velocity()     # Get the Actual Intake speed
         rotor_velocity.refresh()
         velocity_value = rotor_velocity.value
-        wpilib.SmartDashboard.putNumber("Intake Speed Actual", round(velocity_value, 1))
-        wpilib.SmartDashboard.putNumber("Intake Speed Requested", round(self.intake_velocity_voltage.velocity, 1))
+        wpilib.SmartDashboard.putNumber("Intake RPS Actual", round(velocity_value, 1))
+        wpilib.SmartDashboard.putNumber("Intake RPS Requested", round(self.intake_velocity_voltage.velocity, 1))
 
     def simulationPeriodic(self) -> None:
         # 1. Get the applied motor voltage from the simulated TalonFX
