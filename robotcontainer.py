@@ -611,10 +611,10 @@ class RobotContainer:
             "stopIntake", ControlIntake(self._intake, 0, False)
         )
         NamedCommands.registerCommand(
-            "raiseClimber", SetClimberSpeedandTime(self._climber, 0.5, 0.5)
+            "raiseClimber", SetClimberSpeedandTime(self._climber, CLIMBER_MOTOR_SPEED_DEFAULT, 2.75)
         )
         NamedCommands.registerCommand(
-            "lowerClimber", SetClimberSpeedandTime(self._climber, -0.5, 0.5)
+            "lowerClimber", SetClimberSpeedandTime(self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 2.75)
         )
         NamedCommands.registerCommand(
             "AutoAimStationary",
