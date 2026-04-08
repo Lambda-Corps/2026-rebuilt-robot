@@ -327,25 +327,21 @@ class RobotContainer:
         # )
 
         # Shooter speed variable control
-        self._partner_controller.start().onTrue(
-            commands2.cmd.runOnce(
-                lambda: self._shooter.change_speed_variable_function(-SHOOTER_SPEED_INCREMENT)))
-        self._partner_controller.back().onTrue(
-            commands2.cmd.runOnce(
-                lambda: self._shooter.change_speed_variable_function(SHOOTER_SPEED_INCREMENT)))
+        Trigger(lambda: abs(self._partner_controller.getLeftY()) > JOYSTICK_DEAD_ZONE).whileTrue(
+            commands2.cmd.run(self.update_shooter_speed_from_axis)
+        )
 
-        # Climber controls
-        # self._partner_controller.start().whileTrue(
-        #     SetClimberSpeedandTime(
-        #         self._climber, CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
-        #     ).repeatedly()
-        # )
-        # self._partner_controller.back().whileTrue(
-        #     SetClimberSpeedandTime(
-        #         self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
-        #     ).repeatedly()
-        # )
-        # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
+        #Climber controls
+        self._partner_controller.start().whileTrue(
+            SetClimberSpeedandTime(
+                self._climber, CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
+            ).repeatedly()
+        )
+        self._partner_controller.back().whileTrue(
+            SetClimberSpeedandTime(
+                self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
+            ).repeatedly()
+        )
 
         # Intake controls
         (self._partner_controller.x() | 
@@ -655,14 +651,9 @@ class RobotContainer:
         else:
             print("Pose seed failed: No valid vision targets in view.")
 
-    def shooter_speed_change(self, speed_change: float):
-        self.TARGET_SHOOTER_SPEED = self.TARGET_SHOOTER_SPEED - speed_change
-
-        # Clamp speeds
-        if self.TARGET_SHOOTER_SPEED > SHOOTER_MAX_RPS:
-            self.TARGET_SHOOTER_SPEED = SHOOTER_MAX_RPS
-        elif self.TARGET_SHOOTER_SPEED < SHOOTER_MIN_RPS:
-            self.TARGET_SHOOTER_SPEED = SHOOTER_MIN_RPS
-
-        print(f"shooter_speed_change +: {self.TARGET_SHOOTER_SPEED} ({speed_change})")
-        self._shooter.flywheel_spin(self.TARGET_SHOOTER_SPEED)
+    def update_shooter_speed_from_axis(self) -> None:
+        raw_y = self._partner_controller.getLeftY()
+        normalized_y = self.apply_deadzone_and_curve(raw_y, JOYSTICK_DEAD_ZONE, 1.0)
+        if normalized_y != 0.0:
+            change_amount = normalized_y * (SHOOTER_SPEED_INCREMENT / 50.0)
+            self._shooter.change_speed_variable_function(round(change_amount, 2))
