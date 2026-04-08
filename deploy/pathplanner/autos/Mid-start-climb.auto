@@ -43,7 +43,7 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 5.0
+            "waitTime": 4.0
           }
         },
         {
@@ -53,15 +53,22 @@
           }
         },
         {
-          "type": "path",
+          "type": "deadline",
           "data": {
-            "pathName": "mid-shoot-to-corral"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "corral-to-mid-shoot"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "raiseClimber"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "mid-shoot-to-climber-approach"
+                }
+              }
+            ]
           }
         },
         {
@@ -71,15 +78,15 @@
           }
         },
         {
-          "type": "named",
+          "type": "path",
           "data": {
-            "name": "AutoAimStationary_1.5Sec"
+            "pathName": "climb-approach-to-climb"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "runindexer"
+            "name": "lowerClimber"
           }
         }
       ]
