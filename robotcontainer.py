@@ -37,6 +37,7 @@ import wpilib
 from commands.flywheelCommand import ControlFlywheel
 from commands.indexerCommand import ControlIndexer
 from commands.intakeCommand import ControlIntake
+from commands.intakeOscillateCommand import IntakeOscillate
 from commands.ledcommand import LEDCommand
 from commands2.button import CommandXboxController, Trigger
 from commands2.sysid import SysIdRoutine
@@ -325,16 +326,25 @@ class RobotContainer:
         #     )
         # )
 
-        self._partner_controller.start().whileTrue(
-            SetClimberSpeedandTime(
-                self._climber, CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
-            ).repeatedly()
-        )
-        self._partner_controller.back().whileTrue(
-            SetClimberSpeedandTime(
-                self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
-            ).repeatedly()
-        )
+        # Shooter speed variable control
+        self._partner_controller.start().onTrue(
+            commands2.cmd.runOnce(
+                lambda: self._shooter.change_speed_variable_function(-SHOOTER_SPEED_INCREMENT)))
+        self._partner_controller.back().onTrue(
+            commands2.cmd.runOnce(
+                lambda: self._shooter.change_speed_variable_function(SHOOTER_SPEED_INCREMENT)))
+
+        # Climber controls
+        # self._partner_controller.start().whileTrue(
+        #     SetClimberSpeedandTime(
+        #         self._climber, CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
+        #     ).repeatedly()
+        # )
+        # self._partner_controller.back().whileTrue(
+        #     SetClimberSpeedandTime(
+        #         self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 0.5
+        #     ).repeatedly()
+        # )
         # self._driver_controller.start().toggleOnTrue(LEDrainbow(self._ledsubsystem))
 
         # Intake controls
@@ -391,20 +401,13 @@ class RobotContainer:
             ControlFlywheel(self._shooter, SHOOTER_SPEED_LEFT)
         )
 
-        # Shooter speed variable control
-            # self._partner_controller.start().onTrue(
-        #     commands2.cmd.runOnce(
-        #         lambda: self._shooter.change_speed_variable_function(-SHOOTER_SPEED_INCREMENT)))
-        # self._partner_controller.back().onTrue(
-        #     commands2.cmd.runOnce(
-        #         lambda: self._shooter.change_speed_variable_function(SHOOTER_SPEED_INCREMENT)))
-
         # Indexer controls
         # When partner_controller left bumper (or isSimulation and driver left bumper) is pressed and shooter is spinning, run the indexer
         (self._partner_controller.leftBumper() & Trigger(lambda: self._shooter.is_shooter_spinning(0.1)) |
             (Trigger(wpilib.RobotBase.isSimulation) & self._driver_controller.leftBumper() & Trigger(lambda: self._shooter.is_shooter_spinning(0.1)))
         ).whileTrue(
-            ControlIndexer(self._indexer, INDEXER_SPEED_DEFAULT)
+            ControlIndexer(self._indexer, INDEXER_SPEED_DEFAULT).andThen(
+                IntakeOscillate(self._intake))
         ).whileFalse(
             ControlIndexer(self._indexer, 0)
         )
