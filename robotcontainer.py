@@ -614,7 +614,7 @@ class RobotContainer:
             "raiseClimber", SetClimberSpeedandTime(self._climber, CLIMBER_MOTOR_SPEED_DEFAULT, 2.75)
         )
         NamedCommands.registerCommand(
-            "lowerClimber", SetClimberSpeedandTime(self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 2.75)
+            "climbUp", SetClimberSpeedandTime(self._climber, -CLIMBER_MOTOR_SPEED_DEFAULT, 2)
         )
         NamedCommands.registerCommand(
             "AutoAimStationary",
@@ -629,7 +629,7 @@ class RobotContainer:
         NamedCommands.registerCommand(
             "AutoAimStationary_1.5Sec",
             self.auto_aim_and_distance_shooter(lambda: 0.0, lambda: 0.0).withTimeout(
-                0.5
+                1.5
             ),
         )
         NamedCommands.registerCommand(

@@ -8,27 +8,32 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 4.947593201754386,
-        "y": 0.8039473684210521
+        "x": 5.053371710526315,
+        "y": 0.611622807017543
       },
       "isLocked": false,
       "linkedName": "Rigth auto 7"
     },
     {
       "anchor": {
-        "x": 2.529111842105263,
-        "y": 1.679024122807017
+        "x": 2.7935581140350876,
+        "y": 1.755953947368421
       },
       "prevControl": {
-        "x": 2.3800603070175432,
-        "y": -1.1529550438596492
+        "x": 2.4329495614035093,
+        "y": 0.40487390350877184
       },
       "nextControl": null,
       "isLocked": false,
       "linkedName": "right-shoot"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": 169.528563483358
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -48,7 +53,7 @@
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -169.14358665193785
+    "rotation": -177.13759477388837
   },
   "useDefaultConstraints": true
 }

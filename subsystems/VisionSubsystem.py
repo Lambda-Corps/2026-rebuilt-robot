@@ -108,24 +108,36 @@ class VisionSubsystem(commands2.Subsystem):
 
     def periodic(self) -> None:
         if self._camera is None or self._pose_estimator is None:
+            SmartDashboard.putBoolean("Vision/CameraConnected", False)
+            return
+
+        if not self._camera.isConnected():
+            SmartDashboard.putBoolean("Vision/HasTargets", False)
+            self._consecutive_camera_failures += 1
+            SmartDashboard.putBoolean("Vision/CameraConnected", False)
             return
 
         try:
             result = self._camera.getLatestResult()
             self._consecutive_camera_failures = 0
+            SmartDashboard.putBoolean("Vision/CameraConnected", True)
         except Exception:
+            SmartDashboard.putBoolean("Vision/HasTargets", False)
             self._consecutive_camera_failures += 1
             SmartDashboard.putBoolean("Vision/CameraConnected", False)
             return
 
-        SmartDashboard.putBoolean("Vision/CameraConnected", True)
         SmartDashboard.putBoolean("Vision/HasTargets", result.hasTargets())
 
         if not result.hasTargets():
+            SmartDashboard.putBoolean("Vision/HasTargets", False)
             return
 
         targets = result.getTargets()
         multi_tag = len(targets) >= 2
+
+        if len(targets) > 0:
+            SmartDashboard.putBoolean("Vision/HasTargets", True)
 
         if not multi_tag:
             # Single-tag: reject ambiguous poses (two equally-valid mirror solutions)
