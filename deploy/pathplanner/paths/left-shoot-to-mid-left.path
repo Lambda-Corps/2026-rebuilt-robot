@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.5339199561403505,
-        "y": 8.208442982456141
+        "x": 1.9556000000000002,
+        "y": 8.366405555555556
       },
       "isLocked": false,
       "linkedName": "Top auto blue 3"
@@ -20,8 +20,8 @@
         "y": 7.054495614035087
       },
       "prevControl": {
-        "x": 5.7216995614035095,
-        "y": 7.121809210526314
+        "x": 8.42591111111111,
+        "y": 7.382216666666667
       },
       "nextControl": null,
       "isLocked": false,
@@ -31,7 +31,7 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 0.5,
-      "rotationDegrees": -1.3547331350364726
+      "rotationDegrees": -89.59146473990373
     }
   ],
   "constraintZones": [],
@@ -46,8 +46,8 @@
     "unlimited": false
   },
   "goalEndState": {
-    "velocity": 0,
-    "rotation": -98.34389158403316
+    "velocity": 2.0,
+    "rotation": -98.344
   },
   "reversed": false,
   "folder": null,

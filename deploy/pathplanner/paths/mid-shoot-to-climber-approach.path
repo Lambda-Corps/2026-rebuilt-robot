@@ -12,7 +12,7 @@
         "y": 3.7307786651900807
       },
       "isLocked": false,
-      "linkedName": "Mid auto 1"
+      "linkedName": "mid-shoot"
     },
     {
       "anchor": {
@@ -42,7 +42,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 175.72415888737106
+    "rotation": 170.40887625658644
   },
   "reversed": false,
   "folder": null,
