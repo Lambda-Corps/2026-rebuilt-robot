@@ -5,7 +5,7 @@ This repository contains the codebase for the **2026-Rebuilt-Robot**, developed 
 
 ## Key Subsystems & Features
 
-- **Advanced Vision Integration (`VisionSubsystem.py`)**: Uses `photonlibpy` for precision AprilTag tracking. Calculates standard deviations dynamically based on target ambiguity and array size, passing reliable position coordinates back to the swerve odometry logic. 
+- **Advanced Vision Integration (`VisionSubsystem.py`)**: Uses `photonlibpy` for precision AprilTag tracking. Calculates standard deviations dynamically based on target ambiguity and array size, passing reliable position coordinates back to the swerve odometry logic. Supports multiple PhotonVision cameras; each camera's name and robot-relative mounting pose is defined in `camera_config.py`. 
 - **Auto-Aim and Variable Shooting**: Uses drivetrain `ChassisSpeeds` combined with a velocity lookahead to compensate for lateral movement delay. This ensures the robot predicts its future location to seamlessly pre-align while strafing. Distance is computed dynamically and fed into an exponential curve for real-time flywheel speed mapping.
 - **Alliance Agnostic Field Play**: Automatically detects Driver Station alliance details from the FMS and reflects target positions cleanly across Cartesian limits, meaning autonomous routines behave identically on Red or Blue alliances.
 - **VelocityVoltage Flywheels**: The robot uses Phoenix 6 `VelocityVoltage` loops rather than simple DutyCycle percentages for precise Rotations Per Second targeting on shooter and intake wheels.

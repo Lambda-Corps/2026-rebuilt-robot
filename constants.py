@@ -1,7 +1,3 @@
-import math
-
-from wpimath.geometry import Rotation3d, Transform3d, Translation3d
-
 SHOOTER_DEFAULT_RPS = -50.0
 SHOOTER_MIN_RPS = -100.0
 SHOOTER_MAX_RPS = 0.0
@@ -24,13 +20,14 @@ JOYSTICK_EXP_SCALING = 2.5
 TELEOP_MIN_INPUT_RESPONSE_TIME = 0.175
 CLIMBER_MOTOR_SPEED_DEFAULT = 0.75
 
-# Vision
-CAMERA_NAME = "OV9281"
+# Vision (camera names and mounting poses live in camera_config.py)
 POSE_AMBIGUITY_THRESHOLD = 0.2
-ROBOT_TO_CAMERA = Transform3d(
-    Translation3d(0.3, 0.0, 0.5),
-    Rotation3d(0.0, math.radians(-15), 0.0),
-)
+# Cached camera results older than this (seconds) are treated as "no targets"
+VISION_RESULT_MAX_AGE = 0.25
+# Reject vision poses this far (meters) outside the field boundary
+VISION_FIELD_MARGIN = 0.5
+# Reject vision poses this far (meters) above/below the floor
+VISION_MAX_Z_ERROR = 0.75
 _SIM_UPDATE_PERIOD = 0.025
 
 
